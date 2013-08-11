@@ -1,8 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-from Tkinter import *
-import tkSimpleDialog, tkFileDialog, tkMessageBox
+from tkinter import *
+#import tkSimpleDialog, tkFileDialog, tkMessageBox
 import os, sys, signal, glob, time, getopt, shlex
+from concurrent.futures import ThreadPoolExecutor as Pool
+from array import array
+from struct import pack
 
 
 # UGLY GLOBAL VARIABLES...
@@ -35,12 +38,12 @@ displayDir = []
 def usage():
     """ Display usage message and exit. """
 
-    print "Xpmidi+, GUI frontend for MIDI Player"
-    print "(c) 2003-12, Bob van der Poel"
-    print "Usage: xpmidi [opts] [dir | Midifiles]"
-    print "Options:"
-    print "   -f    start full size"
-    print "   -v    display version number"
+    print("Xpmidi+, GUI frontend for MIDI Player")
+    print("(c) 2003-12, Bob van der Poel")
+    print("Usage: xpmidi [opts] [dir | Midifiles]")
+    print("Options:")
+    print("   -f    start full size")
+    print("   -v    display version number")
     sys.exit(0)
 
 
@@ -155,7 +158,7 @@ class setOptions(object):
         f.grid_columnconfigure(0, weight=1)
 
        	f.grab_set()
-	root.wait_window(f)	
+        root.wait_window(f)
 
  
     def apply(self): 
@@ -454,7 +457,7 @@ class Application(object):
                 PlayPID = None
                 self.playTimer = 0
                 self.welcome()
-
+    
     def stopPmidi(self, w=''):
         """ Stop currently playing MIDI. """
 
@@ -495,11 +498,11 @@ class Application(object):
                 # Create a standard MIDI file which sets all notes OFF.
 
                 tempfile = '/tmp/xpmidi-reset.mid'
-                f=open(tempfile, 'w')
+                f=open(tempfile, 'wb')
 
                 # Standard midi file header, track count=1
-                f.write( "MThd" + chr(0) + chr(0) + chr(0) + chr(6) + chr(0) + chr(1) + \
-                     chr(0) + chr(1) + chr(0) +chr(0xc0) )
+                f.write(pack('4s', b'MThd'))
+                f.write(array('B', [0, 0, 0, 6, 0, 1, 0, 1, 0, 0xc0]))
 
                 # select sysex
                 if sysex == "XG":
@@ -517,15 +520,14 @@ class Application(object):
                         0x7e, 0x7f, 0x09, 0x01, 0xf7]
                 
                 # track header and length
-                f.write("MTrk" + chr(0) + chr(0) + chr(0))
-                f.write(chr(4 + len(sysex_list)))
+                f.write(pack('4s', b'MTrk'))
+                f.write(array('B', [0, 0, 0, 4 + len(sysex_list)]))
                 
                 # write sysex
-                for byte in sysex_list:
-                    f.write(chr(byte))
+                f.write(array('B', sysex_list))
 
                 # EOF status event (4 tick offset) (4)
-                f.write( chr(4) + chr(0xff) + chr(0x2f) + chr(0) )
+                f.write(array('B', [4, 0xff, 0x2f, 0]))
                 f.close()
 
                 self.playfile(tempfile, wait=os.P_WAIT)
@@ -549,7 +551,7 @@ class Application(object):
         
         op = shlex.split(PlayOpts)
 
-        return os.spawnvp(wait, player, [player] + op + [f]  ) 
+        return os.spawnvp(wait, player, [player] + op + [f]) 
 
     # PDF display
 
@@ -613,7 +615,7 @@ class Application(object):
         self.stopPmidi()
 
         def writeoption(s):
-            print "%s = %s" % (s, eval(s))
+            print("%s = %s" % (s, eval(s)))
 
         # The options by name and a 'type': 'list', 'string', 'integer'
         options = [
@@ -725,7 +727,7 @@ except getopt.GetoptError:
 
 for o,a in opts:
     if o == '-v':
-        print Version
+        print(Version)
         sys.exit(0)
     elif o == '-f':
         fullsize=1
@@ -744,24 +746,24 @@ for f in args:
     elif os.path.isfile(f):
         fcount+=1
     else:
-        print "%s is an Unknown filetype" % f
+        print("%s is an Unknown filetype" % f)
         sys.exit(1)
 
 if dcount and fcount:
-    print "You can't mix filenames and directory names on the command line."
+    print("You can't mix filenames and directory names on the command line.")
     sys.exit(1)
 
 if dcount > 1:
-    print "Only 1 directory can be specified on the command line."
+    print("Only 1 directory can be specified on the command line.")
     sys.exit(1)
 
 # Read the RC file if it exists.
 
 if os.path.exists(rcFile):
     try:
-        execfile( rcFile )
+        exec(compile(open(rcFile).read(), rcFile, 'exec'))
     except IOError:
-        print "Error reading %s:  %s" % (rcFile, sys.exc_info()[0] )
+        print("Error reading %s:  %s" % (rcFile, sys.exc_info()[0]))
 
 if not CurrentDir:
     CurrentDir = ['.']
