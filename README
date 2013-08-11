@@ -1,0 +1,143 @@
+
+Xpmidi
+------
+	
+A tkinter frontend for pmidi or aplaymidi (or any other midi file player).
+
+
+Contact
+-------
+	
+Bob van der Poel <bob@mellowood.ca> 
+
+
+Home
+----
+	
+http://www.mellowood.ca
+
+
+Requirements
+------------
+
+1. You need some kind of midi file player. By default the program
+   uses aplaymidi which is now part of the ASLA distribution.
+
+2. You'll need version 2.2 or better of Python, with tkinter.
+
+3. Tkinter depends on tcl/tk. This should be included in your distribution.
+
+
+Installation
+------------
+	
+Just copy the script "xpmidi" to somewhere on your path. "/usr/local/bin"
+is recommended. There is no installation script, you'll have to do it by
+hand.
+
+
+Usage
+-----
+	
+'aplaymidi' is a nice little program to play midi files via an external midi device.
+I use it all the time to play my midi files though a Casio keyboard.
+
+There are 2 problems with aplaymidi:
+
+1. It is command line driven. Fine for casual use, but retyping the same
+   file name gets tedious.
+   
+2. aplaymidi does not always stop all notes on the keyboard if you use Ctrl-C
+   to stop the playback before the end of the midi file is reached.
+   
+Xpmidi solves both problems.
+
+The GUI should be obvious. Shout if problems.
+
+The "stop the notes" problem is fixed by xpmidi though the following:
+
+	1. Create a temporary midi file "/tmp/xpmidi-alloff.mid". This file
+	   contains midi directives to stop the playing of all notes in each
+	   midi channel.
+   
+	2. Call the midi player to play the temporary file.
+
+	3. Delete the temporary file.
+
+You will have to have write access to "/tmp" for this to work. If you don't
+or can't then you can modify xpmidi to use a different directory.
+
+Command line options
+--------------------
+
+xpmidi recognizes the following on the command line:
+
+ -v   Prints the version number and exits
+
+ DIRNAME - you can pass a single directory name on the command line. This is scanned
+           of midi file (actually, any names ending in '.mid'). The filenames are
+           displayed in the selector. Only 1 directory name can be used.
+
+ FILES   - you can supply one or more midi filenames instead of a directory.
+
+You can't mix FILES and DIRNAME on the command line.
+
+
+RC File
+-------
+	
+Xpmidi stores the name of the last used directory and the list of favorite
+directories in the RC file "~/.xpmidirc". This is an invisible file in
+the user's home directory.
+
+Display of current file
+-----------------------
+
+If you set a PDF display program in the option dialog (or in the RC file) and
+set a directory of PDF files, the file associated with the current midi file
+will be displayed. So, for each MIDI file you should have a PDF. Example, assume
+you have the midi file "neato.mid" in your current midi directory:
+
+ 1. Create a directory ~/mypdfs
+ 2. Create a PDF file ~/mypdfs/neato.pdf
+ 3. In xpmidi->options set the PDF Path set the directory to ~/mypdfs
+ 4. in xpmidi->options set the PDF Display to something like xpdf
+
+Now, when you hit <enter> the file will play and the pdf will be displayed.
+
+Use <f1> to only display the file.
+
+If you have more than one set of PDFs (I have a set for C instruments and Bb),
+then make the PDF Path a list. In my case I use:
+   ~/music/mup/pdf, ~/music/mup/pdf-c
+
+You can rotate the list with the <F2> key.
+
+Kill Notes
+----------
+
+In the options dialog there is a "kill notes on abort" field. If set to anything
+other than 0 the program will run an "all notes off" script to the midi device if
+you hit <stop> or <quit>. This is usually needed for aplaymidi. If you are using
+timidity you'll want to set this to 0.
+
+
+Bugs
+----
+
+None that I know of. But please let me know if you find one. And if you
+fix one, let me know that too :)
+
+
+Licence
+-------
+
+The program xpmidi was written by Bob van der Poel
+is copyright Robert van der Poel, 2003-2009.
+
+This program and associated files can be freely distributed
+according to the terms of the GNU General Public License
+(see the file ``COPYING'').
+
+
+
