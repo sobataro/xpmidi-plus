@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 from tkinter import *
-#import tkSimpleDialog, tkFileDialog, tkMessageBox
+import tkinter.filedialog
+#import tkSimpleDialog, tkMessageBox
 import os, sys, signal, glob, time, getopt, shlex
 from array import array
 from struct import pack
@@ -605,7 +606,7 @@ class Application(object):
         if PlayPID:
             return
 
-        d=tkFileDialog.askdirectory(initialdir=','.join(CurrentDir))
+        d=tkinter.filedialog.askdirectory(initialdir=','.join(CurrentDir))
 
         if d:
             CurrentDir = [d]
@@ -655,8 +656,8 @@ class Application(object):
 
     def playList(self):
 
-        inpath = tkFileDialog.askopenfile(filetypes=[("Playlists","*.xpmidilst")],
-          initialdir="~")
+        inpath = tkinter.filedialog.askopenfile(
+            filetypes=[("Playlists","*.xpmidilst")], initialdir="~")
 
         if not inpath:
             return
