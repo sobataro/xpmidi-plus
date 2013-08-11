@@ -11,7 +11,7 @@ PlayPID = None        # PID of currently playing midi
 DisplayPID = None     # PID for the display program
 
 rcFile=os.path.expanduser("~/.xpmidirc")
-Version = 3.3
+Version = 3.4
 
 fullsize = 0          # command line option for fullscreen
 
@@ -22,6 +22,7 @@ CurrentDir = ['.']
 FavoriteDirs = []
 player="aplaymidi"
 PlayOpts = "-p 20:0"      # Player options
+sysex = "GM"
 Bcolor = "white"          # listbox colors
 Fcolor = "medium blue"
 killOnAbort = 1           # run "kill all notes" code on abort
@@ -34,7 +35,7 @@ displayDir = []
 def usage():
     """ Display usage message and exit. """
 
-    print "Xpmidi, GUI frontend for MIDI Player"
+    print "Xpmidi+, GUI frontend for MIDI Player"
     print "(c) 2003-12, Bob van der Poel"
     print "Usage: xpmidi [opts] [dir | Midifiles]"
     print "Options:"
@@ -46,6 +47,14 @@ def usage():
 ####################################################################
 ## These functions create various frames. Maintains consistency
 ## between different windows (and makes cleaner code??).
+
+def makeMenu(parent, buttons=(())):
+    m = Menu(parent)
+    parent.configure(menu = m)
+    for txt, cmd in buttons:
+        m.add_command(label=txt, command=cmd)
+    
+    return m
 
 def makeLabelBox(parent, justify=CENTER, row=0, column=0, text=''):
     """ Create a label box. """
@@ -126,20 +135,21 @@ class setOptions(object):
             return
 
         self.f=f=Toplevel()
-        if root.winfo_viewable():  
+        if root.winfo_viewable():
             f.transient(root)
  
-        bf=makeButtonBar(f, row=0, column=0, 
-            buttons=(("Cancel", self.f.destroy), ("Apply", self.apply) ))
+        makeMenu(f, buttons=(
+            ("Cancel", self.f.destroy), ("Apply", self.apply)))
         self.playerEnt =  makeEntry(f, label="MIDI Player",      text=player,   row=1)
         self.playOptEnt = makeEntry(f, label="Player Options",   text=PlayOpts, row=2) 
-        self.playerAbort = makeEntry(f, label="Kill notes on abort", text=killOnAbort, row=3)
-        self.fgEnt =      makeEntry(f, label="Foreground Color", text=Fcolor,   row=4)
-        self.bgEnt =      makeEntry(f, label="Background Color", text=Bcolor,   row=5)
+        self.sysexEnt =   makeEntry(f, label="SysEX",            text=sysex,    row=3)
+        self.playerAbort = makeEntry(f, label="Kill notes on abort", text=killOnAbort, row=4)
+        self.fgEnt =      makeEntry(f, label="Foreground Color", text=Fcolor,   row=5)
+        self.bgEnt =      makeEntry(f, label="Background Color", text=Bcolor,   row=6)
 
-        self.displayPrg = makeEntry(f, label="PDF Display", text=displayProgram, row=6)
-        self.displayOpt = makeEntry(f, label="PDF Options", text=displayOptions, row=7)
-        self.displayPath = makeEntry(f, label="PDF Path", text=', '.join(displayDir), row=8)
+        self.displayPrg = makeEntry(f, label="PDF Display", text=displayProgram, row=7)
+        self.displayOpt = makeEntry(f, label="PDF Options", text=displayOptions, row=8)
+        self.displayPath = makeEntry(f, label="PDF Path", text=', '.join(displayDir), row=9)
 
         f.grid_rowconfigure(1, weight=1)
         f.grid_columnconfigure(0, weight=1)
@@ -149,12 +159,13 @@ class setOptions(object):
 
  
     def apply(self): 
-        global player, PlayOpts, killOnAbort
+        global player, PlayOpts, sysex, killOnAbort
         global Fcolor, Bcolor
         global displayProgram, displayOptions, displayDir
 
         player = self.playerEnt.get()
         PlayOpts = self.playOptEnt.get()
+        sysex = self.sysexEnt.get()
 
         killOnAbort = self.playerAbort.get()
         if killOnAbort.upper() in ("YES", "ON", "1"):
@@ -189,20 +200,17 @@ class selectFav(object):
 
     def __init__(self):
 
-        if PlayPID:
-            return
+#        if PlayPID:
+#            return
 
         self.f=f=Toplevel()
         if root.winfo_viewable():  
             f.transient(root)
 
-        makeLabelBox(f, text="Select Favorite Directory", row=0, column=0)
-
-        bf=makeButtonBar(f, row=1, column=0, 
-               buttons=(("Done", self.f.destroy),
-                        ("Delete", self.delete),
-                        ("Add Current", self.addToFav),
-                        ("Select", self.select) ) )
+        makeMenu(f, buttons=(
+            ("Open", self.select),
+            ("Add Current", self.addToFav),
+            ("Delete", self.delete)))
       
         self.lb = lb = makeListBox(f, height=10, selectmode=MULTIPLE, row=2, column=0)
         lb.bind("<Double-Button-1>", self.dclick)
@@ -297,41 +305,33 @@ class Application(object):
                mf - a label at the bottom with the current filename.
         """
 
+        self.menu = makeMenu(root, buttons=(
+             ("Stop", self.stopPmidi ),
+             ("Open Dir", self.chd),
+             ("Load Playlist", self.playList),
+             ("Favorites", selectFav ),
+             ("Options", setOptions ) ) )
+
         self.msgbox = makeLabelBox(root, justify=LEFT, row=2, column=0)
 
         self.lb=lb = makeListBox(root, height=28, row=1, column=0)
 
         self.elasped = 0
        
-        bf = makeButtonBar(root, row=0, column=0, buttons=(
-             ("Quit", self.quitall ),
-             ("Stop", self.stopPmidi ),
-             ("New Dir", self.chd),
-             ("Load Playlist", self.playList),
-             ("Favorites", selectFav ),
-             ("Options", setOptions ) ) )
-
-    
-        self.timeButton = Button(bf, width=5, height=1)
-        self.timeButton.grid(column=6, row=0, padx=10)
-        
-        
         # Make the listbox frame expandable
-
+        
         root.grid_rowconfigure(1, weight=1)
         root.grid_columnconfigure(0, weight=1)
 
         # some bindings 
 
         lb.bind("<Return>",  self.loadfileRet)
-        lb.bind("<Button-1>", self.loadfileClick)
+        lb.bind("<Double-1>", self.loadfileDoubleClick)
 
         lb.bind('<Button-3>', self.stopPmidi)
         root.bind('<Escape>', self.stopPmidi)
 
         root.protocol("WM_DELETE_WINDOW", self.quitall)
-        root.bind('<Control-q>', self.quitall)
-        root.bind('<Alt-q>', self.quitall)
 
         for a in 'abcdefghijklmnopqrstuvwxyz':
             root.bind(a, self.keyPress)
@@ -356,8 +356,7 @@ class Application(object):
             c=', '.join(CurrentDir)
         else:
             c = ' '
-        self.msgbox.config(text="XPmidi\n%s" % c)
-        #self.timeButton.config(text="0:00")
+        self.msgbox.config(text="XPmidi+\n%s" % c)
 
     lastkey = ''
     lastkeytime = 0
@@ -406,8 +405,8 @@ class Application(object):
 
         self.loadfile(self.lb.get(ACTIVE) )
 
-    def loadfileClick(self, w):
-        """ Callback for <Button-1>. """
+    def loadfileDoubleClick(self, w):
+        """ Callback for <Double-1>. """
 
         self.lb.activate(self.lb.nearest(w.y))
         self.loadfile(self.lb.get(self.lb.nearest(w.y)))
@@ -425,12 +424,6 @@ class Application(object):
         PlayPID = self.playfile(f)
         
         self.CurrentFile = f.split('/')[-1]
-        cdir = '/'.join(f.split('/')[:-1])
-        if cdir:
-            cdir = '\nDir: ' + cdir
-        else:
-            cdir = '\n'
-        self.msgbox.config(text="Playing: %s%s" % (self.CurrentFile, cdir))
 
         root.update()
 
@@ -441,7 +434,7 @@ class Application(object):
         global PlayPID, DisplayPID
 
         t = time.time() - self.playTimer
-        self.timeButton.config(text="%0d:%02d" % (int(t/60), int(t % 60) ))
+        self.msgbox.config(text="[%02d:%02d]: %s\n%s" % (int(t/60), int(t % 60), self.CurrentFile, CurrentDir[0]))
 
         if DisplayPID:
             try:
@@ -501,25 +494,37 @@ class Application(object):
             if killOnAbort:
                 # Create a standard MIDI file which sets all notes OFF.
 
-                tempfile = '/tmp/xpmidi-alloff.mid'
+                tempfile = '/tmp/xpmidi-reset.mid'
                 f=open(tempfile, 'w')
 
                 # Standard midi file header, track count=1
                 f.write( "MThd" + chr(0) + chr(0) + chr(0) + chr(6) + chr(0) + chr(1) + \
                      chr(0) + chr(1) + chr(0) +chr(0xc0) )
 
-                # track header, len = 78 bytes
-                f.write( "MTrk" + chr(0) + chr(0) + chr(0) + chr(76) )
+                # select sysex
+                if sysex == "XG":
+                    # XG System On
+                    sysex_list = [0x00, 0xf0, 0x08,
+                        0x43, 0x10, 0x4C, 0x00, 0x00, 0x7e, 0x00, 0xf7]
+                elif sysex == "GS":
+                    # GS Reset
+                    sysex_list = [0x00, 0xf0, 0x0a,
+                        0x41, 0x10, 0x42, 0x12, 0x40, 0x00, 0x7f, 0x00,
+                        0x41, 0xF7]
+                else:
+                    # GM System On
+                    sysex_list = [0x00, 0xf0, 0x05,
+                        0x7e, 0x7f, 0x09, 0x01, 0xf7]
+                
+                # track header and length
+                f.write("MTrk" + chr(0) + chr(0) + chr(0))
+                f.write(chr(4 + len(sysex_list)))
+                
+                # write sysex
+                for byte in sysex_list:
+                    f.write(chr(byte))
 
-                # all notes off for each channel
-                for ch in range(0,16):
-                    f.write( chr(0) + chr(0xb0 | ch) + chr(0x7b) + chr(0) )
-
-                # midi reset sysex (at 4 ticks offset)
-                f.write( chr(4) + chr(0xf0) + chr(0x05) + chr(0x7e) +
-                     chr(0x7f) + chr(0x09) + chr(0x01) + chr(0xf7) )
-
-                # EOF status event (4 tick offset)
+                # EOF status event (4 tick offset) (4)
                 f.write( chr(4) + chr(0xff) + chr(0x2f) + chr(0) )
                 f.close()
 
@@ -537,7 +542,7 @@ class Application(object):
 
         root.after(500, self.checkfor)
         self.playTimer = time.time()
-
+        
         # 3rd arg is a list! Player name, options and filename.
         
         ##a=os.spawnvp(os.P_NOWAIT, "sync", []) # avoid delays while playing (maybe!)
@@ -587,14 +592,14 @@ class Application(object):
 
 
     def chd(self):
-        """ Callback from <New Dir> button. Changes to new directory and updates list.  """
+        """ Callback from <Open Dir> button. Switch to new directory and updates list.  """
 
         global CurrentDir
 
         if PlayPID:
             return
 
-        d=tkFileDialog.askdirectory(initialdir=CurrentDir)
+        d=tkFileDialog.askdirectory(initialdir=','.join(CurrentDir))
 
         if d:
             CurrentDir = [d]
@@ -618,6 +623,7 @@ class Application(object):
             ['Fcolor',         's'],
             ['PlayOpts',       's'],
             ['player',         's'],
+            ['sysex',          's'],
             ['killOnAbort',    'i'],
             ['displayProgram', 's'],
             ['displayOptions', 's'],
@@ -769,8 +775,8 @@ if dcount:
 # Start the tk stuff. If you want to change the font size, do it here!!!
 
 root = Tk()
-root.title("Xpmidi - pmidi frontend")
-root.option_add('*font', "Georgia 14 bold")
+root.title("Xpmidi+ - pmidi frontend")
+root.option_add('*font', "Arial 10")
 if fullsize:
     root.geometry("%dx%s" % root.maxsize())
 app=Application()
