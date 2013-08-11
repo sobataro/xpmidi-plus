@@ -2,7 +2,8 @@
 
 from tkinter import *
 import tkinter.filedialog
-#import tkSimpleDialog, tkMessageBox
+import tkinter.messagebox
+#import tkSimpleDialog
 import os, sys, signal, glob, time, getopt, shlex
 from array import array
 from struct import pack
@@ -69,17 +70,6 @@ def makeLabelBox(parent, justify=CENTER, row=0, column=0, text=''):
     f.grid_rowconfigure(0, weight=1)
 
     return b
-
-def makeButtonBar(parent, row=0, column=0, buttons=(())):
-    """ Create a single line frame with buttons. """
-
-    bf=Frame(parent)
-    c=0
-    for txt, cmd in buttons:
-        Button(bf, text=txt, height=1, command=cmd).grid(column=c, row=0, pady=5)
-        c+=1
-    bf.grid(row=row, column=column, sticky=W)
-    return bf
 
 def makeListBox(parent, width=50, height=20, selectmode=BROWSE, row=0, column=0):
     """ Create a list box with x and y scrollbars. """
@@ -169,6 +159,9 @@ class setOptions(object):
         player = self.playerEnt.get()
         PlayOpts = self.playOptEnt.get()
         sysex = self.sysexEnt.get()
+        
+        tkinter.messagebox.showerror("Set Forground Color",
+            "Illegal foreground color value")
 
         killOnAbort = self.playerAbort.get()
         if killOnAbort.upper() in ("YES", "ON", "1"):
@@ -185,13 +178,15 @@ class setOptions(object):
             app.lb.config(fg=fg)
             Fcolor = fg
         except TclError:
-            tkMessageBox.showerror("Set Forground Color", "Illegal foreground color value")
+            tkinter.messagebox.showerror("Set Forground Color",
+                "Illegal foreground color value")
 
         try:
             app.lb.config(bg=bg)
             Bcolor = bg
         except TclError:
-            tkMessageBox.showerror("Set Background Color", "Illegal background color value")
+            tkinter.messagebox.showerror("Set Background Color",
+                "Illegal background color value")
 
         self.f.destroy()
 
@@ -228,7 +223,6 @@ class selectFav(object):
         f.grab_set()
         f.focus_set()
         f.wait_window(f)
-
 
 
     def dclick(self, w):
@@ -277,7 +271,7 @@ class selectFav(object):
             l.append(self.lb.get(int(n)))
 
         if l:
-            if tkMessageBox.askyesno("Delete Directory",
+            if tkinter.messagebox.askyesno("Delete Directory",
                      "Are you sure you want to delete the "
                      "highlighted directories from the favorites list?",
                       parent=self.f):
@@ -309,11 +303,11 @@ class Application(object):
         """
 
         self.menu = makeMenu(root, buttons=(
-             ("Stop", self.stopPmidi ),
+             ("Stop", self.stopPmidi),
              ("Open Dir", self.chd),
              ("Load Playlist", self.playList),
-             ("Favorites", selectFav ),
-             ("Options", setOptions ) ) )
+             ("Favorites", selectFav),
+             ("Options", setOptions)))
 
         self.msgbox = makeLabelBox(root, justify=LEFT, row=2, column=0)
 
@@ -328,7 +322,7 @@ class Application(object):
 
         # some bindings 
 
-        lb.bind("<Return>",  self.loadfileRet)
+        lb.bind("<Return>", self.loadfileRet)
         lb.bind("<Double-1>", self.loadfileDoubleClick)
 
         lb.bind('<Button-3>', self.stopPmidi)
@@ -347,7 +341,7 @@ class Application(object):
         lb.focus_force()   # make the listbox use keyboard
 
         self.CurrentFile = None
-        self.fileList = {}    # dict of files in listbox. Key is displayed name, data=actual
+        self.fileList = {} # dict of files in listbox. Key is displayed name, data=actual
 
         self.updateList()
         self.welcome()
@@ -390,7 +384,7 @@ class Application(object):
 
         for x,a in enumerate(l):
             if a[0:sz].upper() >= c:
-                self.lb.select_clear(ACTIVE)   # needed to un-hilite existing selection
+                self.lb.select_clear(ACTIVE) # needed to un-hilite existing selection
                 self.lb.activate(x)
                 self.lb.see(x)
                 self.lb.select_set(x)
@@ -437,7 +431,8 @@ class Application(object):
         global PlayPID, DisplayPID
 
         t = time.time() - self.playTimer
-        self.msgbox.config(text="[%02d:%02d]: %s\n%s" % (int(t/60), int(t % 60), self.CurrentFile, CurrentDir[0]))
+        self.msgbox.config(text="[%02d:%02d]: %s\n%s" %
+            (int(t/60), int(t % 60), self.CurrentFile, CurrentDir[0]))
 
         if DisplayPID:
             try:
@@ -500,7 +495,8 @@ class Application(object):
             if pid:
                 return
 
-            x=os.kill(cPID, signal.SIGKILL)  # stop current player, could leave hanging notes
+            # stop current player, could leave hanging notes
+            x=os.kill(cPID, signal.SIGKILL)
 
             if killOnAbort:
                 # Create a standard MIDI file which sets all notes OFF.
@@ -553,8 +549,6 @@ class Application(object):
         self.playTimer = time.time()
         
         op = shlex.split(PlayOpts)
-        
-#        return Popen([player] + [player] + op + [f])
 
         return os.spawnvp(wait, player, [player] + op + [f]) 
 
@@ -569,7 +563,7 @@ class Application(object):
 
         displayDir.append(displayDir.pop(0))
         opts={'aspect':4}
-        tkMessageBox.showinfo(message="DisplayPDF dir: %s" % displayDir[0])
+        tkinter.messagebox.showinfo(message="DisplayPDF dir: %s" % displayDir[0])
         
     def displayOnly(self, w):
         """ Callback for <F1>. """
@@ -592,14 +586,16 @@ class Application(object):
         if len(displayDir):
             t = os.path.join(os.path.expanduser(displayDir[0]), f)
             if os.path.exists(t):
-                DisplayPID = os.spawnvp(os.P_NOWAIT, displayProgram, [displayProgram] \
-                        + displayOptions.split() + [t]  )
+                DisplayPID = os.spawnvp(os.P_NOWAIT, displayProgram,
+                    [displayProgram] + displayOptions.split() + [t]  )
         else:
             displayPID = None
 
 
     def chd(self):
-        """ Callback from <Open Dir> button. Switch to new directory and updates list.  """
+        """ Callback from <Open Dir> button.
+            Switch to new directory and updates list.
+        """
 
         global CurrentDir
 
@@ -638,7 +634,8 @@ class Application(object):
 
         f=open(rcFile, 'w')
         
-        f.write("### XPMIDI RC FILE. Autogenerated %s, do not modify.\n\n" % time.asctime())
+        f.write("### XPMIDI RC FILE. Autogenerated %s, do not modify.\n\n"
+            % time.asctime())
 
         for o, t in options:
             if t == 'l' or t == 'i':     # lists are just converted    
@@ -682,12 +679,12 @@ class Application(object):
     def updateList(self, files=None, sort=1):
         """ Update the list box with with midi files in the selected directories.
     
-            1. If files is NOT None, it has to be a list of midi file names. If
-               there are files, skip (2).
+            1. If files is NOT None, it has to be a list of midi file names.
+               If there are files, skip (2).
             2. Create a list of all the files with a .mid extension in all the dirs,
             3. Strip out the actual filename (less the mid ext) from each entry
-               and create a dic entry with the filename as the key and the complete
-               path as the data.
+               and create a dic entry with the filename as the key and the
+               complete path as the data.
             4. Update the listbox 
         """
 
@@ -783,7 +780,6 @@ if dcount:
 
 root = Tk()
 root.title("Xpmidi+ - pmidi frontend")
-root.option_add('*font', "Arial 10")
 if fullsize:
     root.geometry("%dx%s" % root.maxsize())
 app=Application()
@@ -792,7 +788,4 @@ if fcount:
     app.updateList(args)
 
 root.mainloop()
-
-
-
 
