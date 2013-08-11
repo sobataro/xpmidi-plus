@@ -3,7 +3,6 @@
 from tkinter import *
 #import tkSimpleDialog, tkFileDialog, tkMessageBox
 import os, sys, signal, glob, time, getopt, shlex
-from concurrent.futures import ThreadPoolExecutor as Pool
 from array import array
 from struct import pack
 
@@ -109,7 +108,7 @@ def makeListBox(parent, width=50, height=20, selectmode=BROWSE, row=0, column=0)
     f.grid_rowconfigure(0, weight=1)   
     f.grid_columnconfigure(1, weight=1)
     
-    return  lb
+    return lb
 
 def makeEntry(parent, label="Label", text='', column=0, row=0):
 
@@ -420,14 +419,14 @@ class Application(object):
         if not f:
             return
 
+        print(f)
+        self.CurrentFile = f
         f=self.fileList[f]
         self.stopPmidi()
 
         self.displayPDF(f)
         PlayPID = self.playfile(f)
         
-        self.CurrentFile = f.split('/')[-1]
-
         root.update()
 
 
@@ -457,6 +456,14 @@ class Application(object):
                 PlayPID = None
                 self.playTimer = 0
                 self.welcome()
+                
+                # play next file
+                print(self.CurrentFile)
+                if self.CurrentFile in self.fileList:
+                    files = list(self.fileList)
+                    next = files[files.index(self.CurrentFile) + 1]
+                    self.loadfile(next)
+                
     
     def stopPmidi(self, w=''):
         """ Stop currently playing MIDI. """
@@ -530,7 +537,7 @@ class Application(object):
                 f.write(array('B', [4, 0xff, 0x2f, 0]))
                 f.close()
 
-                self.playfile(tempfile, wait=os.P_WAIT)
+                self.playfile(tempfile, os.P_WAIT)
 
                 os.remove(tempfile)
                 time.sleep(.5)
@@ -541,15 +548,12 @@ class Application(object):
     def playfile(self, f, wait=os.P_NOWAIT):
         """ Call the midi player. Used by loadfile() and stoppmidi(). """
 
-
         root.after(500, self.checkfor)
         self.playTimer = time.time()
         
-        # 3rd arg is a list! Player name, options and filename.
-        
-        ##a=os.spawnvp(os.P_NOWAIT, "sync", []) # avoid delays while playing (maybe!)
-        
         op = shlex.split(PlayOpts)
+        
+#        return Popen([player] + [player] + op + [f])
 
         return os.spawnvp(wait, player, [player] + op + [f]) 
 
