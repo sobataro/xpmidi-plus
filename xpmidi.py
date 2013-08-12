@@ -358,6 +358,7 @@ class Application(object):
 
         self.updateList()
         self.welcome()
+        self.playSysex(os.P_NOWAIT)
 
     def welcome(self):
         """ Display (c) message in status box. """
@@ -420,7 +421,18 @@ class Application(object):
 
         self.lb.activate(self.lb.nearest(w.y))
         self.loadfile(self.lb.get(self.lb.nearest(w.y)))
-            
+
+    def playSysex(self, wait=os.P_WAIT):
+        # Find sysex directory
+        file = __file__
+        if os.path.islink(file):
+            file = os.readlink(file)
+        sysex_file = os.path.abspath(os.path.dirname(file)) +\
+            "/sysex/" + sysex + ".mid"
+
+        self.playfile(sysex_file, wait)
+
+
     def loadfile(self, f):
         global PlayPID
 
@@ -526,7 +538,9 @@ class Application(object):
 
                 time.sleep(.5)
 
+        self.playSysex()
         self.welcome()
+        time.sleep(.5)
 
 
     def playfile(self, f, wait=os.P_NOWAIT):
