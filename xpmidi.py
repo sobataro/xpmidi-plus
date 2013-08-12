@@ -166,7 +166,7 @@ class setOptions(object):
        	f.grab_set()
         root.wait_window(f)
 
- 
+
     def apply(self): 
         global player, PlayOpts, sysex, killOnAbort
         global Fcolor, Bcolor
@@ -514,42 +514,16 @@ class Application(object):
             if killOnAbort:
                 # Create a standard MIDI file which sets all notes OFF.
 
-                tempfile = '/tmp/xpmidi-reset.mid'
-                f=open(tempfile, 'wb')
-
-                # Standard midi file header, track count=1
-                f.write(pack('4s', b'MThd'))
-                f.write(array('B', [0, 0, 0, 6, 0, 1, 0, 1, 0, 0xc0]))
-
-                # select sysex
-                if sysex == "XG":
-                    # XG System On
-                    sysex_list = [0x00, 0xf0, 0x08,
-                        0x43, 0x10, 0x4C, 0x00, 0x00, 0x7e, 0x00, 0xf7]
-                elif sysex == "GS":
-                    # GS Reset
-                    sysex_list = [0x00, 0xf0, 0x0a,
-                        0x41, 0x10, 0x42, 0x12, 0x40, 0x00, 0x7f, 0x00,
-                        0x41, 0xF7]
-                else:
-                    # GM System On
-                    sysex_list = [0x00, 0xf0, 0x05,
-                        0x7e, 0x7f, 0x09, 0x01, 0xf7]
+                # Find sysex directory
+                file = __file__
+                if os.path.islink(file):
+                    file = os.readlink(file)
+                sysex_file = os.path.abspath(os.path.dirname(file)) +\
+                    "/sysex/" + sysex + ".mid"
+                print(sysex_file)
                 
-                # track header and length
-                f.write(pack('4s', b'MTrk'))
-                f.write(array('B', [0, 0, 0, 4 + len(sysex_list)]))
-                
-                # write sysex
-                f.write(array('B', sysex_list))
+                self.playfile(sysex_file, os.P_NOWAIT)
 
-                # EOF status event (4 tick offset) (4)
-                f.write(array('B', [4, 0xff, 0x2f, 0]))
-                f.close()
-
-                self.playfile(tempfile, os.P_WAIT)
-
-                os.remove(tempfile)
                 time.sleep(.5)
 
         self.welcome()
