@@ -20,7 +20,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 from tkinter import *
 import tkinter.filedialog
 import tkinter.messagebox
-#import tkSimpleDialog
 import os, sys, signal, glob, time, getopt, shlex
 from array import array
 from struct import pack
@@ -31,8 +30,8 @@ from struct import pack
 PlayPID = None        # PID of currently playing midi
 DisplayPID = None     # PID for the display program
 
-rcFile=os.path.expanduser("~/.xpmidirc")
-Version = 3.4
+rcFile=os.path.expanduser("~/.xpmidiplusrc")
+Version = 0.1
 
 fullsize = 0          # command line option for fullscreen
 
