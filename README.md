@@ -21,15 +21,15 @@ Usage
 
 Just execute xpmidi.py script. No instllation is needed.
 
-# To be written in more detailed
+To be written in more detailed
 
 
 
 Command Line Options
 ------
 
-# This chapter was just copied from original xpmidi's README. 
-# To be revised
+This chapter was just copied from original xpmidi's README. 
+To be revised
 
 xpmidi recognizes the following on the command line:
 
@@ -48,8 +48,8 @@ You can't mix FILES and DIRNAME on the command line.
 Settings File (~/.xpmidirc)
 ------
 
-# This chapter was just copied from original xpmidi's README. 
-# To be revised
+This chapter was just copied from original xpmidi's README. 
+To be revised
 	
 Xpmidi stores the name of the last used directory and the list of favorite
 directories in the RC file "~/.xpmidirc". This is an invisible file in
@@ -60,7 +60,7 @@ the user's home directory.
 Options
 ------
 
-# To be written
+To be written
 
 
 
@@ -68,8 +68,8 @@ Bugs and Issues
 ------
 
 * User interface is not good
-** Original xpmidi works well, but I was dissatisfied with the original UI... That was why I developing xpmidi+
-** Current xpmidi+ is mush the same as original.
+    * Original xpmidi works well, but I was dissatisfied with the original UI... That was why I developing xpmidi+
+    * Current xpmidi+ is mush the same as original.
 
 
 
