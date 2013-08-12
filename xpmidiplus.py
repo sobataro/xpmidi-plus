@@ -45,7 +45,6 @@ PlayOpts = "-p 20:0"      # Player options
 sysex = "GM"
 Bcolor = "white"          # listbox colors
 Fcolor = "medium blue"
-killOnAbort = 1           # run "kill all notes" code on abort
 displayProgram = ""
 displayOptions = ""
 displayDir = []
@@ -152,12 +151,11 @@ class setOptions(object):
         self.playerEnt =  makeEntry(f, label="MIDI Player",      text=player,   row=1)
         self.playOptEnt = makeEntry(f, label="Player Options",   text=PlayOpts, row=2) 
         self.sysexEnt =   makeEntry(f, label="SysEX",            text=sysex,    row=3)
-        self.playerAbort = makeEntry(f, label="Kill notes on abort", text=killOnAbort, row=4)
-        self.fgEnt =      makeEntry(f, label="Foreground Color", text=Fcolor,   row=5)
-        self.bgEnt =      makeEntry(f, label="Background Color", text=Bcolor,   row=6)
+        self.fgEnt =      makeEntry(f, label="Foreground Color", text=Fcolor,   row=4)
+        self.bgEnt =      makeEntry(f, label="Background Color", text=Bcolor,   row=5)
 
-        self.displayPrg = makeEntry(f, label="PDF Display", text=displayProgram, row=7)
-        self.displayOpt = makeEntry(f, label="PDF Options", text=displayOptions, row=8)
+        self.displayPrg = makeEntry(f, label="PDF Display", text=displayProgram, row=6)
+        self.displayOpt = makeEntry(f, label="PDF Options", text=displayOptions, row=7)
         self.displayPath = makeEntry(f, label="PDF Path", text=', '.join(displayDir), row=9)
 
         f.grid_rowconfigure(1, weight=1)
@@ -166,9 +164,9 @@ class setOptions(object):
        	f.grab_set()
         root.wait_window(f)
 
- 
+
     def apply(self): 
-        global player, PlayOpts, sysex, killOnAbort
+        global player, PlayOpts, sysex
         global Fcolor, Bcolor
         global displayProgram, displayOptions, displayDir
 
@@ -176,12 +174,6 @@ class setOptions(object):
         PlayOpts = self.playOptEnt.get()
         sysex = self.sysexEnt.get()
         
-        killOnAbort = self.playerAbort.get()
-        if killOnAbort.upper() in ("YES", "ON", "1"):
-            killOnAbort = 1
-        else:
-            killOnAbort = 0
-
         displayProgram = self.displayPrg.get()
         displayOptions = self.displayOpt.get()
         fg = self.fgEnt.get()
@@ -358,10 +350,10 @@ class Application(object):
 
         self.updateList()
         self.welcome()
+        self.playSysex(os.P_NOWAIT)
 
     def welcome(self):
-        """ Display (c) message in status box. """
-
+        # Display message in status box
         if CurrentDir:
             c=', '.join(CurrentDir)
         else:
@@ -420,7 +412,18 @@ class Application(object):
 
         self.lb.activate(self.lb.nearest(w.y))
         self.loadfile(self.lb.get(self.lb.nearest(w.y)))
-            
+
+    def playSysex(self, wait=os.P_WAIT):
+        # Find sysex directory
+        file = __file__
+        if os.path.islink(file):
+            file = os.readlink(file)
+        sysex_file = os.path.abspath(os.path.dirname(file)) +\
+            "/sysex/" + sysex + ".mid"
+
+        self.playfile(sysex_file, wait)
+
+
     def loadfile(self, f):
         global PlayPID
 
@@ -511,48 +514,9 @@ class Application(object):
             # stop current player, could leave hanging notes
             x=os.kill(cPID, signal.SIGKILL)
 
-            if killOnAbort:
-                # Create a standard MIDI file which sets all notes OFF.
-
-                tempfile = '/tmp/xpmidi-reset.mid'
-                f=open(tempfile, 'wb')
-
-                # Standard midi file header, track count=1
-                f.write(pack('4s', b'MThd'))
-                f.write(array('B', [0, 0, 0, 6, 0, 1, 0, 1, 0, 0xc0]))
-
-                # select sysex
-                if sysex == "XG":
-                    # XG System On
-                    sysex_list = [0x00, 0xf0, 0x08,
-                        0x43, 0x10, 0x4C, 0x00, 0x00, 0x7e, 0x00, 0xf7]
-                elif sysex == "GS":
-                    # GS Reset
-                    sysex_list = [0x00, 0xf0, 0x0a,
-                        0x41, 0x10, 0x42, 0x12, 0x40, 0x00, 0x7f, 0x00,
-                        0x41, 0xF7]
-                else:
-                    # GM System On
-                    sysex_list = [0x00, 0xf0, 0x05,
-                        0x7e, 0x7f, 0x09, 0x01, 0xf7]
-                
-                # track header and length
-                f.write(pack('4s', b'MTrk'))
-                f.write(array('B', [0, 0, 0, 4 + len(sysex_list)]))
-                
-                # write sysex
-                f.write(array('B', sysex_list))
-
-                # EOF status event (4 tick offset) (4)
-                f.write(array('B', [4, 0xff, 0x2f, 0]))
-                f.close()
-
-                self.playfile(tempfile, os.P_WAIT)
-
-                os.remove(tempfile)
-                time.sleep(.5)
-
+        self.playSysex()
         self.welcome()
+        time.sleep(.5)
 
 
     def playfile(self, f, wait=os.P_NOWAIT):
@@ -640,7 +604,6 @@ class Application(object):
             ['PlayOpts',       's'],
             ['player',         's'],
             ['sysex',          's'],
-            ['killOnAbort',    'i'],
             ['displayProgram', 's'],
             ['displayOptions', 's'],
             ['displayDir',     'l']  ]
