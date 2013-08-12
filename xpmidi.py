@@ -176,9 +176,6 @@ class setOptions(object):
         PlayOpts = self.playOptEnt.get()
         sysex = self.sysexEnt.get()
         
-        tkinter.messagebox.showerror("Set Forground Color",
-            "Illegal foreground color value")
-
         killOnAbort = self.playerAbort.get()
         if killOnAbort.upper() in ("YES", "ON", "1"):
             killOnAbort = 1
