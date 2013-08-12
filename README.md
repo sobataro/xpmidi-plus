@@ -10,7 +10,7 @@ System Requirements
 
 You need following programs:
 
-* MIDI player e.g. aplaymidi or pmidi
+* MIDI player e.g. `aplaymidi` or `pmidi`
 * Python 3 or greater
 * tcl/tk and tkinter
 
@@ -19,7 +19,7 @@ You need following programs:
 Usage
 ------
 
-Just execute xpmidi.py script. No instllation is needed.
+Just execute `xpmidiplus.py` script. No instllation is needed.
 
 To be written in more detailed
 
@@ -52,7 +52,7 @@ This chapter was just copied from original xpmidi's README.
 To be revised
 	
 Xpmidi stores the name of the last used directory and the list of favorite
-directories in the RC file "~/.xpmidirc". This is an invisible file in
+directories in the RC file `~/.xpmidirc`. This is an invisible file in
 the user's home directory.
 
 
