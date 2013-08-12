@@ -45,7 +45,6 @@ PlayOpts = "-p 20:0"      # Player options
 sysex = "GM"
 Bcolor = "white"          # listbox colors
 Fcolor = "medium blue"
-killOnAbort = 1           # run "kill all notes" code on abort
 displayProgram = ""
 displayOptions = ""
 displayDir = []
@@ -152,12 +151,11 @@ class setOptions(object):
         self.playerEnt =  makeEntry(f, label="MIDI Player",      text=player,   row=1)
         self.playOptEnt = makeEntry(f, label="Player Options",   text=PlayOpts, row=2) 
         self.sysexEnt =   makeEntry(f, label="SysEX",            text=sysex,    row=3)
-        self.playerAbort = makeEntry(f, label="Kill notes on abort", text=killOnAbort, row=4)
-        self.fgEnt =      makeEntry(f, label="Foreground Color", text=Fcolor,   row=5)
-        self.bgEnt =      makeEntry(f, label="Background Color", text=Bcolor,   row=6)
+        self.fgEnt =      makeEntry(f, label="Foreground Color", text=Fcolor,   row=4)
+        self.bgEnt =      makeEntry(f, label="Background Color", text=Bcolor,   row=5)
 
-        self.displayPrg = makeEntry(f, label="PDF Display", text=displayProgram, row=7)
-        self.displayOpt = makeEntry(f, label="PDF Options", text=displayOptions, row=8)
+        self.displayPrg = makeEntry(f, label="PDF Display", text=displayProgram, row=6)
+        self.displayOpt = makeEntry(f, label="PDF Options", text=displayOptions, row=7)
         self.displayPath = makeEntry(f, label="PDF Path", text=', '.join(displayDir), row=9)
 
         f.grid_rowconfigure(1, weight=1)
@@ -168,7 +166,7 @@ class setOptions(object):
 
 
     def apply(self): 
-        global player, PlayOpts, sysex, killOnAbort
+        global player, PlayOpts, sysex
         global Fcolor, Bcolor
         global displayProgram, displayOptions, displayDir
 
@@ -176,12 +174,6 @@ class setOptions(object):
         PlayOpts = self.playOptEnt.get()
         sysex = self.sysexEnt.get()
         
-        killOnAbort = self.playerAbort.get()
-        if killOnAbort.upper() in ("YES", "ON", "1"):
-            killOnAbort = 1
-        else:
-            killOnAbort = 0
-
         displayProgram = self.displayPrg.get()
         displayOptions = self.displayOpt.get()
         fg = self.fgEnt.get()
@@ -361,8 +353,7 @@ class Application(object):
         self.playSysex(os.P_NOWAIT)
 
     def welcome(self):
-        """ Display (c) message in status box. """
-
+        # Display message in status box
         if CurrentDir:
             c=', '.join(CurrentDir)
         else:
@@ -523,21 +514,6 @@ class Application(object):
             # stop current player, could leave hanging notes
             x=os.kill(cPID, signal.SIGKILL)
 
-            if killOnAbort:
-                # Create a standard MIDI file which sets all notes OFF.
-
-                # Find sysex directory
-                file = __file__
-                if os.path.islink(file):
-                    file = os.readlink(file)
-                sysex_file = os.path.abspath(os.path.dirname(file)) +\
-                    "/sysex/" + sysex + ".mid"
-                print(sysex_file)
-                
-                self.playfile(sysex_file, os.P_NOWAIT)
-
-                time.sleep(.5)
-
         self.playSysex()
         self.welcome()
         time.sleep(.5)
@@ -628,7 +604,6 @@ class Application(object):
             ['PlayOpts',       's'],
             ['player',         's'],
             ['sysex',          's'],
-            ['killOnAbort',    'i'],
             ['displayProgram', 's'],
             ['displayOptions', 's'],
             ['displayDir',     'l']  ]
