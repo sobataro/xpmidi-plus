@@ -41,11 +41,17 @@ Usage
 
 Just execute `xpmidiplus.py` script. No instllation is needed.
 
-To be written in more detailed
+### Basic usage of xpmidiplus.py
+
+1. You must set proper MIDI port number in the "Player Options". See the [Options](#options) section.
+
+2. Click "Open Dir" button and select the directory contains .mid files.
+
+3. Double click some .mid file and the file will be played.
 
 
 
-Options
+<a name="options"> Options
 ------
 
 You can set following options in the "Options" screen.
