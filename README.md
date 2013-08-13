@@ -80,6 +80,41 @@ When xpmidi+ started, this file is excuted as Python source code.
 
 
 
+Options
+------
+
+You can set following options in the "Options" screen.
+
+### MIDI Playback Options
+
+* MIDI Player
+    * MIDI player's name. `aplaymidi` or `pmidi` is supported.
+
+* Player Options
+    * MIDI player's option.
+    * `-p` option (MIDI port) is specified by default. You can check ports by `pmidi -l` or `aplaymidi -l` commands.
+
+* SysEX
+    * System Exclusive to send tone generators before each playback.
+    * `\[Specified SysEX\].mid` file in the `sysex` directory will be used. Preset: GM, GS and XG.
+    * If you want to use another system exclusive, you can add any files in the `sysex` directory, and specify the name in this field.
+
+### UI Options
+
+* Foreground Color / Background Color
+    * Color of xpmidi+'s screen.
+
+### PDF Options
+
+* PDF Display / PDF Options
+    * PDF viewer's name e.g. `evince` and command line options to the PDF viewer.
+
+* PDF Path
+    * Path for PDF files.
+    * If `\[PDF Path\]/\[Playing midi files' name\].pdf` file exists, the file will be passed to the PDF viewer.
+
+
+
 Bugs and Issues
 ------
 
