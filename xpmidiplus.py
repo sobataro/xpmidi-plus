@@ -72,7 +72,7 @@ def makeMenu(parent, buttons=(())):
     parent.configure(menu = m)
     for txt, cmd in buttons:
         m.add_command(label=txt, command=cmd)
-    
+
     return m
 
 def makeLabelBox(parent, justify=CENTER, row=0, column=0, text=''):
@@ -88,7 +88,7 @@ def makeLabelBox(parent, justify=CENTER, row=0, column=0, text=''):
 
 def makeListBox(parent, width=50, height=20, selectmode=BROWSE, row=0, column=0):
     """ Create a list box with x and y scrollbars. """
-    
+
     f=Frame(parent)
     ys=Scrollbar(f)
     xs=Scrollbar(f)
@@ -110,10 +110,9 @@ def makeListBox(parent, width=50, height=20, selectmode=BROWSE, row=0, column=0)
 
     lb.grid(column=1,row=0, sticky=N+E+W+S)
 
-    f.grid(row=row, column=column, sticky=E+W+N+S) 
-    f.grid_rowconfigure(0, weight=1)   
+    f.grid(row=row, column=column, sticky=E+W+N+S)
+    f.grid_rowconfigure(0, weight=1)
     f.grid_columnconfigure(1, weight=1)
-    
     return lb
 
 def makeEntry(parent, label="Label", text='', column=0, row=0):
@@ -125,7 +124,7 @@ def makeEntry(parent, label="Label", text='', column=0, row=0):
     e.delete(0, END)
     e.insert(END, text)
     f.grid( column=column, row=row)
-    
+
     return e
 
 #########################################
@@ -145,11 +144,11 @@ class setOptions(object):
         self.f=f=Toplevel()
         if root.winfo_viewable():
             f.transient(root)
- 
+
         makeMenu(f, buttons=(
             ("Cancel", self.f.destroy), ("Apply", self.apply)))
         self.playerEnt =  makeEntry(f, label="MIDI Player",      text=player,   row=1)
-        self.playOptEnt = makeEntry(f, label="Player Options",   text=PlayOpts, row=2) 
+        self.playOptEnt = makeEntry(f, label="Player Options",   text=PlayOpts, row=2)
         self.sysexEnt =   makeEntry(f, label="SysEX",            text=sysex,    row=3)
         self.fgEnt =      makeEntry(f, label="Foreground Color", text=Fcolor,   row=4)
         self.bgEnt =      makeEntry(f, label="Background Color", text=Bcolor,   row=5)
@@ -161,11 +160,11 @@ class setOptions(object):
         f.grid_rowconfigure(1, weight=1)
         f.grid_columnconfigure(0, weight=1)
 
-       	f.grab_set()
+        f.grab_set()
         root.wait_window(f)
 
 
-    def apply(self): 
+    def apply(self)
         global player, PlayOpts, sysex
         global Fcolor, Bcolor
         global displayProgram, displayOptions, displayDir
@@ -173,7 +172,7 @@ class setOptions(object):
         player = self.playerEnt.get()
         PlayOpts = self.playOptEnt.get()
         sysex = self.sysexEnt.get()
-        
+
         displayProgram = self.displayPrg.get()
         displayOptions = self.displayOpt.get()
         fg = self.fgEnt.get()
@@ -207,17 +206,17 @@ class selectFav(object):
 #            return
 
         self.f=f=Toplevel()
-        if root.winfo_viewable():  
+        if root.winfo_viewable():
             f.transient(root)
 
         makeMenu(f, buttons=(
             ("Open", self.select),
             ("Add Current", self.addToFav),
             ("Delete", self.delete)))
-      
+
         self.lb = lb = makeListBox(f, height=10, selectmode=MULTIPLE, row=2, column=0)
         lb.bind("<Double-Button-1>", self.dclick)
-        
+
         # Make the listbox frame expandable
 
         f.grid_rowconfigure(2, weight=1)
@@ -319,13 +318,13 @@ class Application(object):
         self.lb=lb = makeListBox(root, height=28, row=1, column=0)
 
         self.elasped = 0
-       
+
         # Make the listbox frame expandable
-        
+
         root.grid_rowconfigure(1, weight=1)
         root.grid_columnconfigure(0, weight=1)
 
-        # some bindings 
+        # some bindings
 
         lb.bind("<Return>", self.loadfileRet)
         lb.bind("<Double-1>", self.loadfileDoubleClick)
@@ -369,11 +368,11 @@ class Application(object):
         c=self.lastKeyHit = ev.char.upper()
 
         # Timer. If there is less than 3/4 second between this key and
-        # the previous we concat the keypress string. Else, start with 
+        # the previous we concat the keypress string. Else, start with
         # new key.
 
         tm = time.time()
-        delay = tm - self.lastkeytime 
+        delay = tm - self.lastkeytime
         self.lastkeytime = tm     # save time of this key for next time
 
         if delay < .75:
@@ -394,10 +393,10 @@ class Application(object):
                 self.lb.see(x)
                 self.lb.select_set(x)
                 break
-    
 
 
-    """ Play a selected file. This is a listbox callback. 
+
+    """ Play a selected file. This is a listbox callback.
         Two callback funcs are needed: one for a mouse click,
         the other for a <Return>.
     """
@@ -437,7 +436,7 @@ class Application(object):
 
         self.displayPDF(f)
         PlayPID = self.playfile(f)
-        
+
         root.update()
 
 
@@ -463,20 +462,20 @@ class Application(object):
                 root.after(500, self.checkfor)
             except OSError:  # player is gone, kill display
                 if DisplayPID:
-                    os.kill(DisplayPID, signal.SIGKILL) 
+                    os.kill(DisplayPID, signal.SIGKILL)
                 DisplayPID = None
                 PlayPID = None
                 self.playTimer = 0
                 self.welcome()
-                
+
                 # play next file
                 print(self.CurrentFile)
                 if self.CurrentFile in self.fileList:
                     files = list(self.fileList)
                     next = files[files.index(self.CurrentFile) + 1]
                     self.loadfile(next)
-                
-    
+
+
     def stopPmidi(self, w=''):
         """ Stop currently playing MIDI. """
 
@@ -499,8 +498,8 @@ class Application(object):
             returns a process ID and a status indication. We check the PID
             returned. If this value is equal to the current PID then
             the process has died ... and we can ignore the whole issue.
-        """ 
-        
+        """
+
         if cPID:
 
             try:
@@ -524,10 +523,10 @@ class Application(object):
 
         root.after(500, self.checkfor)
         self.playTimer = time.time()
-        
+
         op = shlex.split(PlayOpts)
 
-        return os.spawnvp(wait, player, [player] + op + [f]) 
+        return os.spawnvp(wait, player, [player] + op + [f])
 
     # PDF display
 
@@ -541,7 +540,7 @@ class Application(object):
         displayDir.append(displayDir.pop(0))
         opts={'aspect':4}
         tkinter.messagebox.showinfo(message="DisplayPDF dir: %s" % displayDir[0])
-        
+
     def displayOnly(self, w):
         """ Callback for <F1>. """
 
@@ -555,10 +554,10 @@ class Application(object):
 
         if not displayProgram:
             return
-        
+
         if DisplayPID:
             os.kill(DisplayPID, signal.SIGKILL)
-            
+
         f = os.path.basename(midifile).replace(".mid", ".pdf")
         if len(displayDir):
             t = os.path.join(os.path.expanduser(displayDir[0]), f)
@@ -609,12 +608,12 @@ class Application(object):
             ['displayDir',     'l']  ]
 
         f=open(rcFile, 'w')
-        
+
         f.write("### XPMIDI RC FILE. Autogenerated %s, do not modify.\n\n"
             % time.asctime())
 
         for o, t in options:
-            if t == 'l' or t == 'i':     # lists are just converted    
+            if t == 'l' or t == 'i':     # lists are just converted
                 pv = """%s""" % eval(o)
             elif t == 's':               # strings need additional love
                 vv=eval(o)
@@ -651,17 +650,17 @@ class Application(object):
                 flist.append(os.path.join(dir, l))
 
         self.updateList(flist, 0)
-        
+
     def updateList(self, files=None, sort=1):
         """ Update the list box with with midi files in the selected directories.
-    
+
             1. If files is NOT None, it has to be a list of midi file names.
                If there are files, skip (2).
             2. Create a list of all the files with a .mid extension in all the dirs,
             3. Strip out the actual filename (less the mid ext) from each entry
                and create a dic entry with the filename as the key and the
                complete path as the data.
-            4. Update the listbox 
+            4. Update the listbox
         """
 
         if not files:
@@ -682,11 +681,11 @@ class Application(object):
 
         if sort:
             tlist.sort()
-       
+
         for f in tlist:
             self.lb.insert(END, f)
             self.lb.select_set(0)
-        
+
         self.welcome()
 
 
@@ -764,4 +763,3 @@ if fcount:
     app.updateList(args)
 
 root.mainloop()
-
