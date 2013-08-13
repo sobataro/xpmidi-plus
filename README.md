@@ -67,7 +67,7 @@ You can set following options in the "Options" screen.
 
 * SysEX
     * System Exclusive to send tone generators before each playback.
-    * `\[Specified SysEX\].mid` file in the `sysex` directory will be used. Preset: GM, GS and XG.
+    * `[Specified SysEX].mid` file in the `sysex` directory will be used. Preset: GM, GS and XG.
     * If you want to use another system exclusive, you can add any files in the `sysex` directory, and specify the name in this field.
 
 ### UI Options
@@ -82,7 +82,7 @@ You can set following options in the "Options" screen.
 
 * PDF Path
     * Path for PDF files.
-    * If `\[PDF Path\]/\[Playing midi files' name\].pdf` file exists, the file will be passed to the PDF viewer.
+    * If `[PDF Path]/[Playing midi files' name].pdf` file exists, the file will be passed to the PDF viewer.
 
 
 
