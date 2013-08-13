@@ -41,46 +41,17 @@ Usage
 
 Just execute `xpmidiplus.py` script. No instllation is needed.
 
-To be written in more detailed
+### Basic usage of xpmidiplus.py
+
+1. You must set proper MIDI port number in the "Player Options". See the [Options](#options) section.
+
+2. Click "Open Dir" button and select the directory contains .mid files.
+
+3. Double click some .mid file and the file will be played.
 
 
 
-Options
-------
-
-To be written
-
-
-
-Command Line Options
-------
-
-(This chapter was just copied from original xpmidi's README. To be revised)
-
-xpmidi recognizes the following on the command line:
-
- -v   Prints the version number and exits
-
- DIRNAME - you can pass a single directory name on the command line. This is scanned
-           of midi file (actually, any names ending in '.mid'). The filenames are
-           displayed in the selector. Only 1 directory name can be used.
-
- FILES   - you can supply one or more midi filenames instead of a directory.
-
-You can't mix FILES and DIRNAME on the command line.
-
-
-
-Settings File (~/.xpmidirc)
-------
-
-Xpmidi+ stores settings in the RC file `~/.xpmidiplusrc`.
-
-When xpmidi+ started, this file is excuted as Python source code.
-
-
-
-Options
+<a name="options"> Options
 ------
 
 You can set following options in the "Options" screen.
@@ -112,6 +83,34 @@ You can set following options in the "Options" screen.
 * PDF Path
     * Path for PDF files.
     * If `\[PDF Path\]/\[Playing midi files' name\].pdf` file exists, the file will be passed to the PDF viewer.
+
+
+
+Command Line Options
+------
+
+(This chapter was just copied from original xpmidi's README. To be revised)
+
+xpmidi recognizes the following on the command line:
+
+ -v   Prints the version number and exits
+
+ DIRNAME - you can pass a single directory name on the command line. This is scanned
+           of midi file (actually, any names ending in '.mid'). The filenames are
+           displayed in the selector. Only 1 directory name can be used.
+
+ FILES   - you can supply one or more midi filenames instead of a directory.
+
+You can't mix FILES and DIRNAME on the command line.
+
+
+
+Settings File (~/.xpmidirc)
+------
+
+Xpmidi+ stores settings in the RC file `~/.xpmidiplusrc`.
+
+When xpmidi+ started, this file is excuted as Python source code.
 
 
 
