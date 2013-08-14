@@ -5,7 +5,7 @@ Copyright (C) 2013  tuxjunky
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; version 2 of the License.
+the Free Software Foundation; Version 2 of the License.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,24 +27,24 @@ from struct import pack
 
 # UGLY GLOBAL VARIABLES...
 
-PlayPID = None        # PID of currently playing midi
-DisplayPID = None     # PID for the display program
+play_pid = None        # PID of currently playing midi
+display_pid = None     # PID for the display program
 
-rcFile=os.path.expanduser("~/.xpmidiplusrc")
-Version = 0.1
+rc_file = os.path.expanduser("~/.xpmidiplusrc")
+version = 0.2
 
 fullsize = 0          # command line option for fullscreen
 
-## These are stored in the rcfile on exit. Some can
+## These are stored in the rc_file on exit. Some can
 ## be modified via the options menu.
 
-CurrentDir = ['.']
-FavoriteDirs = []
-player="aplaymidi"
-PlayOpts = "-p 20:0"      # Player options
+current_dir = ['.']
+favorite_dirs = []
+player = "aplaymidi"
+player_options = "-p 20:0"      # Player options
 sysex = "GM"
-Bcolor = "white"          # listbox colors
-Fcolor = "medium blue"
+background_color = "white"          # listbox colors
+foreground_color = "medium blue"
 displayProgram = ""
 displayOptions = ""
 displayDir = []
@@ -55,8 +55,8 @@ def usage():
     """ Display usage message and exit. """
 
     print("Xpmidi+, GUI frontend for MIDI Player")
-    print("(c) 2003-12, Bob van der Poel")
-    print("Usage: xpmidi [opts] [dir | Midifiles]")
+    print("(c) 2012, tuxjunky")
+    print("Usage: xpmidiplus.py [opts] [dir | Midifiles]")
     print("Options:")
     print("   -f    start full size")
     print("   -v    display version number")
@@ -89,31 +89,31 @@ def makeLabelBox(parent, justify=CENTER, row=0, column=0, text=''):
 def makeListBox(parent, width=50, height=20, selectmode=BROWSE, row=0, column=0):
     """ Create a list box with x and y scrollbars. """
 
-    f=Frame(parent)
-    ys=Scrollbar(f)
-    xs=Scrollbar(f)
-    lb=Listbox(f,
-               bg=Bcolor,
-               fg=Fcolor,
-               width=width,
-               height=height,
-               yscrollcommand=ys.set,
-               xscrollcommand=xs.set,
-               exportselection=FALSE,
-               selectmode=selectmode )
+    f = Frame(parent)
+    ys = Scrollbar(f)
+    xs = Scrollbar(f)
+    listbox = Listbox(f,
+        bg=background_color,
+        fg=foreground_color,
+        width=width,
+        height=height,
+        yscrollcommand=ys.set,
+        xscrollcommand=xs.set,
+        exportselection=FALSE,
+        selectmode=selectmode)
 
-    ys.config(orient=VERTICAL, command=lb.yview)
+    ys.config(orient=VERTICAL, command=listbox.yview)
     ys.grid(column=0,row=0, sticky=N+S)
 
-    xs.config(orient=HORIZONTAL, command=lb.xview)
+    xs.config(orient=HORIZONTAL, command=listbox.xview)
     xs.grid(column=1, row=1, sticky=E+W)
 
-    lb.grid(column=1,row=0, sticky=N+E+W+S)
+    listbox.grid(column=1,row=0, sticky=N+E+W+S)
 
     f.grid(row=row, column=column, sticky=E+W+N+S)
     f.grid_rowconfigure(0, weight=1)
     f.grid_columnconfigure(1, weight=1)
-    return lb
+    return listbox
 
 def makeEntry(parent, label="Label", text='', column=0, row=0):
 
@@ -138,7 +138,7 @@ class setOptions(object):
 
     def __init__(self):
 
-        if PlayPID:
+        if play_pid:
             return
 
         self.f=f=Toplevel()
@@ -148,10 +148,10 @@ class setOptions(object):
         makeMenu(f, buttons=(
             ("Cancel", self.f.destroy), ("Apply", self.apply)))
         self.playerEnt =  makeEntry(f, label="MIDI Player",      text=player,   row=1)
-        self.playOptEnt = makeEntry(f, label="Player Options",   text=PlayOpts, row=2)
+        self.playOptEnt = makeEntry(f, label="Player Options",   text=player_options, row=2)
         self.sysexEnt =   makeEntry(f, label="SysEX",            text=sysex,    row=3)
-        self.fgEnt =      makeEntry(f, label="Foreground Color", text=Fcolor,   row=4)
-        self.bgEnt =      makeEntry(f, label="Background Color", text=Bcolor,   row=5)
+        self.fgEnt =      makeEntry(f, label="Foreground Color", text=foreground_color,   row=4)
+        self.bgEnt =      makeEntry(f, label="Background Color", text=background_color,   row=5)
 
         self.displayPrg = makeEntry(f, label="PDF Display", text=displayProgram, row=6)
         self.displayOpt = makeEntry(f, label="PDF Options", text=displayOptions, row=7)
@@ -165,12 +165,12 @@ class setOptions(object):
 
 
     def apply(self):
-        global player, PlayOpts, sysex
-        global Fcolor, Bcolor
+        global player, player_options, sysex
+        global foreground_color, background_color
         global displayProgram, displayOptions, displayDir
 
         player = self.playerEnt.get()
-        PlayOpts = self.playOptEnt.get()
+        player_options = self.playOptEnt.get()
         sysex = self.sysexEnt.get()
 
         displayProgram = self.displayPrg.get()
@@ -179,15 +179,15 @@ class setOptions(object):
         bg = self.bgEnt.get()
 
         try:
-            app.lb.config(fg=fg)
-            Fcolor = fg
+            app.listbox.config(fg=fg)
+            foreground_color = fg
         except TclError:
             tkinter.messagebox.showerror("Set Forground Color",
                 "Illegal foreground color value")
 
         try:
-            app.lb.config(bg=bg)
-            Bcolor = bg
+            app.listbox.config(bg=bg)
+            background_color = bg
         except TclError:
             tkinter.messagebox.showerror("Set Background Color",
                 "Illegal background color value")
@@ -202,7 +202,7 @@ class selectFav(object):
 
     def __init__(self):
 
-#        if PlayPID:
+#        if play_pid:
 #            return
 
         self.f=f=Toplevel()
@@ -214,8 +214,8 @@ class selectFav(object):
             ("Add Current", self.addToFav),
             ("Delete", self.delete)))
 
-        self.lb = lb = makeListBox(f, height=10, selectmode=MULTIPLE, row=2, column=0)
-        lb.bind("<Double-Button-1>", self.dclick)
+        self.listbox = makeListBox(f, height=10, selectmode=MULTIPLE, row=2, column=0)
+        self.listbox.bind("<Double-Button-1>", self.dclick)
 
         # Make the listbox frame expandable
 
@@ -232,25 +232,25 @@ class selectFav(object):
     def dclick(self, w):
         """ Callback for doubleclick. Just do one dir. """
 
-        self.doSelect( [self.lb.get(self.lb.nearest(w.y))] )
+        self.doSelect( [self.listbox.get(self.listbox.nearest(w.y))] )
 
 
     def select(self):
         """ Callback for the 'select' button. """
 
         l=[]
-        for n in self.lb.curselection():
-            l.append(self.lb.get(int(n)))
+        for n in self.listbox.curselection():
+            l.append(self.listbox.get(int(n)))
         self.doSelect(l)
 
 
     def doSelect(self, n):
         """ Update the filelist. Called from select button or doubleclick."""
 
-        global CurrentDir
+        global current_dir
 
         if n:
-            CurrentDir = n
+            current_dir = n
             app.updateList()
         self.f.destroy()
 
@@ -258,21 +258,21 @@ class selectFav(object):
     def addToFav(self):
         """ Add the current directory (what's displayed) to favorites."""
 
-        for n in CurrentDir:
-            if n and not FavoriteDirs.count(n):
-                FavoriteDirs.append(n)
+        for n in current_dir:
+            if n and not favorite_dirs.count(n):
+                favorite_dirs.append(n)
 
-        FavoriteDirs.sort()
+        favorite_dirs.sort()
         self.updateBox()
 
     def delete(self):
         """ Delete highlighted items, Called from 'delete' button. """
 
-        global FavoriteDirs
+        global favorite_dirs
 
         l=[]
-        for n in self.lb.curselection():
-            l.append(self.lb.get(int(n)))
+        for n in self.listbox.curselection():
+            l.append(self.listbox.get(int(n)))
 
         if l:
             if tkinter.messagebox.askyesno("Delete Directory",
@@ -281,17 +281,17 @@ class selectFav(object):
                       parent=self.f):
 
                 for n in l:
-                    FavoriteDirs.remove(n)
+                    favorite_dirs.remove(n)
 
                 self.updateBox()
 
 
     def updateBox(self):
-        global FavoriteDirs
+        global favorite_dirs
 
-        self.lb.delete(0, END)
-        for n in FavoriteDirs:
-            self.lb.insert(END, n)
+        self.listbox.delete(0, END)
+        for n in favorite_dirs:
+            self.listbox.insert(END, n)
 
 
 ############################
@@ -315,7 +315,7 @@ class Application(object):
 
         self.msgbox = makeLabelBox(root, justify=LEFT, row=2, column=0)
 
-        self.lb=lb = makeListBox(root, height=28, row=1, column=0)
+        self.listbox = makeListBox(root, height=28, row=1, column=0)
 
         self.elasped = 0
 
@@ -326,10 +326,10 @@ class Application(object):
 
         # some bindings
 
-        lb.bind("<Return>", self.loadfileRet)
-        lb.bind("<Double-1>", self.loadfileDoubleClick)
+        self.listbox.bind("<Return>", self.loadfileRet)
+        self.listbox.bind("<Double-1>", self.loadfileDoubleClick)
 
-        lb.bind('<Button-3>', self.stopPmidi)
+        self.listbox.bind('<Button-3>', self.stopPmidi)
         root.bind('<Escape>', self.stopPmidi)
 
         root.protocol("WM_DELETE_WINDOW", self.quitall)
@@ -337,12 +337,12 @@ class Application(object):
         for a in 'abcdefghijklmnopqrstuvwxyz':
             root.bind(a, self.keyPress)
 
-        lb.bind('<F1>', self.displayOnly)
-        lb.bind('<F2>', self.rotateDisplayList)
+        self.listbox.bind('<F1>', self.displayOnly)
+        self.listbox.bind('<F2>', self.rotateDisplayList)
 
         # end bindings
 
-        lb.focus_force()   # make the listbox use keyboard
+        self.listbox.focus_force()   # make the listbox use keyboard
 
         self.CurrentFile = None
         self.fileList = {} # dict of files in listbox. Key is displayed name, data=actual
@@ -353,8 +353,8 @@ class Application(object):
 
     def welcome(self):
         # Display message in status box
-        if CurrentDir:
-            c=', '.join(CurrentDir)
+        if current_dir:
+            c = ', '.join(current_dir)
         else:
             c = ' '
         self.msgbox.config(text="XPmidi+\n%s" % c)
@@ -365,7 +365,7 @@ class Application(object):
     def keyPress(self, ev):
         """ Callback for the alpha keys a..z. Finds 1st entry matching keypress. """
 
-        c=self.lastKeyHit = ev.char.upper()
+        c = self.lastKeyHit = ev.char.upper()
 
         # Timer. If there is less than 3/4 second between this key and
         # the previous we concat the keypress string. Else, start with
@@ -384,14 +384,12 @@ class Application(object):
         c = self.lastkey
         sz = len(c)
 
-        l=self.lb.get(0, END)
-
-        for x,a in enumerate(l):
+        for x,a in enumerate(self.listbox.get(0, END)):
             if a[0:sz].upper() >= c:
-                self.lb.select_clear(ACTIVE) # needed to un-hilite existing selection
-                self.lb.activate(x)
-                self.lb.see(x)
-                self.lb.select_set(x)
+                self.listbox.select_clear(ACTIVE) # needed to un-hilite existing selection
+                self.listbox.activate(x)
+                self.listbox.see(x)
+                self.listbox.select_set(x)
                 break
 
 
@@ -404,13 +402,13 @@ class Application(object):
     def loadfileRet(self, w):
         """ Callback for <Return>. """
 
-        self.loadfile(self.lb.get(ACTIVE) )
+        self.loadfile(self.listbox.get(ACTIVE))
 
     def loadfileDoubleClick(self, w):
         """ Callback for <Double-1>. """
 
-        self.lb.activate(self.lb.nearest(w.y))
-        self.loadfile(self.lb.get(self.lb.nearest(w.y)))
+        self.listbox.activate(self.listbox.nearest(w.y))
+        self.loadfile(self.listbox.get(self.listbox.nearest(w.y)))
 
     def playSysex(self, wait=os.P_WAIT):
         # Find sysex directory
@@ -424,7 +422,7 @@ class Application(object):
 
 
     def loadfile(self, f):
-        global PlayPID
+        global play_pid
 
         if not f:
             return
@@ -435,7 +433,7 @@ class Application(object):
         self.stopPmidi()
 
         self.displayPDF(f)
-        PlayPID = self.playfile(f)
+        play_pid = self.playfile(f)
 
         root.update()
 
@@ -443,53 +441,57 @@ class Application(object):
     def checkfor(self):
         """ Callback for the "after" timer."""
 
-        global PlayPID, DisplayPID
+        global play_pid, display_pid
 
         t = time.time() - self.playTimer
         self.msgbox.config(text="[%02d:%02d]: %s\n%s" %
-            (int(t/60), int(t % 60), self.CurrentFile, CurrentDir[0]))
+            (int(t/60), int(t % 60), self.CurrentFile, current_dir[0]))
 
-        if DisplayPID:
+        if display_pid:
             try:
-                os.waitpid(DisplayPID, os.WNOHANG)
+                os.waitpid(display_pid, os.WNOHANG)
             except OSError:   # our display is gone, kill the player
-                DisplayPID = None
+                display_pid = None
                 self.stopPmidi()
 
-        if PlayPID:
+        if play_pid:
             try:
-                s = os.waitpid(PlayPID, os.WNOHANG)
+                s = os.waitpid(play_pid, os.WNOHANG)
                 root.after(500, self.checkfor)
             except OSError:  # player is gone, kill display
-                if DisplayPID:
-                    os.kill(DisplayPID, signal.SIGKILL)
-                DisplayPID = None
-                PlayPID = None
+                if display_pid:
+                    os.kill(display_pid, signal.SIGKILL)
+                display_pid = None
+                play_pid = None
                 self.playTimer = 0
                 self.welcome()
 
                 # play next file
-                print(self.CurrentFile)
                 if self.CurrentFile in self.fileList:
-                    files = list(self.fileList)
-                    next = files[files.index(self.CurrentFile) + 1]
-                    self.loadfile(next)
+                    listSize = self.listbox.size()
+                    files = self.listbox.get(0, listSize)
+                    nextIndex = (files.index(self.CurrentFile) + 1) % listSize
+                    self.listbox.selection_clear(0, listSize)
+                    self.listbox.selection_set(nextIndex)
+                    self.listbox.activate(nextIndex)
+                    self.listbox.see(nextIndex)
+                    self.loadfile(files[nextIndex])
 
 
     def stopPmidi(self, w=''):
         """ Stop currently playing MIDI. """
 
-        global PlayPID, DisplayPID
+        global play_pid, display_pid
 
-        if not PlayPID and not DisplayPID:    # nothing playing, just return
+        if not play_pid and not display_pid:    # nothing playing, just return
             return
 
-        if DisplayPID:
-            os.kill(DisplayPID, signal.SIGKILL)
-            DisplayPID = None
+        if display_pid:
+            os.kill(display_pid, signal.SIGKILL)
+            display_pid = None
 
-        cPID = PlayPID
-        PlayPID = None
+        current_pid = play_pid
+        play_pid = None
 
         self.msgbox.config(text="Stopping...%s\n" % self.CurrentFile)
         root.update_idletasks()
@@ -500,10 +502,10 @@ class Application(object):
             the process has died ... and we can ignore the whole issue.
         """
 
-        if cPID:
+        if current_pid:
 
             try:
-                pid,s = os.waitpid(cPID, os.WNOHANG)
+                pid,s = os.waitpid(current_pid, os.WNOHANG)
             except OSError:
                 return
 
@@ -511,7 +513,7 @@ class Application(object):
                 return
 
             # stop current player, could leave hanging notes
-            x=os.kill(cPID, signal.SIGKILL)
+            x=os.kill(current_pid, signal.SIGKILL)
 
         self.playSysex()
         self.welcome()
@@ -524,7 +526,7 @@ class Application(object):
         root.after(500, self.checkfor)
         self.playTimer = time.time()
 
-        op = shlex.split(PlayOpts)
+        op = shlex.split(player_options)
 
         return os.spawnvp(wait, player, [player] + op + [f])
 
@@ -545,27 +547,27 @@ class Application(object):
         """ Callback for <F1>. """
 
         self.stopPmidi()
-        self.displayPDF(self.fileList[self.lb.get(ACTIVE)] )
+        self.displayPDF(self.fileList[self.listbox.get(ACTIVE)] )
 
     def displayPDF(self, midifile):
         """ Find and display a PDF for the currently playing file. """
 
-        global DisplayPID
+        global display_pid
 
         if not displayProgram:
             return
 
-        if DisplayPID:
-            os.kill(DisplayPID, signal.SIGKILL)
+        if display_pid:
+            os.kill(display_pid, signal.SIGKILL)
 
         f = os.path.basename(midifile).replace(".mid", ".pdf")
         if len(displayDir):
             t = os.path.join(os.path.expanduser(displayDir[0]), f)
             if os.path.exists(t):
-                DisplayPID = os.spawnvp(os.P_NOWAIT, displayProgram,
+                display_pid = os.spawnvp(os.P_NOWAIT, displayProgram,
                     [displayProgram] + displayOptions.split() + [t]  )
         else:
-            displayPID = None
+            display_pid = None
 
 
     def chd(self):
@@ -573,15 +575,15 @@ class Application(object):
             Switch to new directory and updates list.
         """
 
-        global CurrentDir
+        global current_dir
 
-        if PlayPID:
+        if play_pid:
             return
 
-        d=tkinter.filedialog.askdirectory(initialdir=','.join(CurrentDir))
+        d=tkinter.filedialog.askdirectory(initialdir=','.join(current_dir))
 
         if d:
-            CurrentDir = [d]
+            current_dir = [d]
             app.updateList()
 
 
@@ -596,18 +598,18 @@ class Application(object):
 
         # The options by name and a 'type': 'list', 'string', 'integer'
         options = [
-            ['FavoriteDirs',   'l'],
-            ['CurrentDir',     'l'],
-            ['Bcolor',         's'],
-            ['Fcolor',         's'],
-            ['PlayOpts',       's'],
-            ['player',         's'],
-            ['sysex',          's'],
+            ['favorite_dirs', 'l'],
+            ['current_dir', 'l'],
+            ['background_color', 's'],
+            ['foreground_color', 's'],
+            ['player_options', 's'],
+            ['player', 's'],
+            ['sysex', 's'],
             ['displayProgram', 's'],
             ['displayOptions', 's'],
-            ['displayDir',     'l']  ]
+            ['displayDir', 'l']  ]
 
-        f=open(rcFile, 'w')
+        f=open(rc_file, 'w')
 
         f.write("### XPMIDI RC FILE. Autogenerated %s, do not modify.\n\n"
             % time.asctime())
@@ -665,7 +667,7 @@ class Application(object):
 
         if not files:
             files=[]
-            for f in CurrentDir:
+            for f in current_dir:
                 files.extend( glob.glob('%s/*.mid' % f))
 
         self.fileList = {}  # dict of filenames indexed to display name
@@ -677,14 +679,14 @@ class Application(object):
             self.fileList[a]=f
             tlist.append(a)
 
-        self.lb.delete(0, END)
+        self.listbox.delete(0, END)
 
         if sort:
             tlist.sort()
 
         for f in tlist:
-            self.lb.insert(END, f)
-            self.lb.select_set(0)
+            self.listbox.insert(END, f)
+            self.listbox.select_set(0)
 
         self.welcome()
 
@@ -704,7 +706,7 @@ except getopt.GetoptError:
 
 for o,a in opts:
     if o == '-v':
-        print(Version)
+        print(version)
         sys.exit(0)
     elif o == '-f':
         fullsize=1
@@ -736,19 +738,19 @@ if dcount > 1:
 
 # Read the RC file if it exists.
 
-if os.path.exists(rcFile):
+if os.path.exists(rc_file):
     try:
-        exec(compile(open(rcFile).read(), rcFile, 'exec'))
+        exec(compile(open(rc_file).read(), rc_file, 'exec'))
     except IOError:
-        print("Error reading %s:  %s" % (rcFile, sys.exc_info()[0]))
+        print("Error reading %s:  %s" % (rc_file, sys.exc_info()[0]))
 
-if not CurrentDir:
-    CurrentDir = ['.']
+if not current_dir:
+    current_dir = ['.']
 
 # If a dir was specified make it current
 
 if dcount:
-    CurrentDir = [os.path.abspath(os.path.expanduser(args[0]))]
+    current_dir = [os.path.abspath(os.path.expanduser(args[0]))]
 
 
 # Start the tk stuff. If you want to change the font size, do it here!!!
