@@ -164,7 +164,7 @@ class setOptions(object):
         root.wait_window(f)
 
 
-    def apply(self)
+    def apply(self):
         global player, PlayOpts, sysex
         global Fcolor, Bcolor
         global displayProgram, displayOptions, displayDir
