@@ -469,11 +469,15 @@ class Application(object):
                 self.welcome()
 
                 # play next file
-                print(self.CurrentFile)
                 if self.CurrentFile in self.fileList:
-                    files = list(self.fileList)
-                    next = files[files.index(self.CurrentFile) + 1]
-                    self.loadfile(next)
+                    listSize = self.lb.size()
+                    files = self.lb.get(0, listSize)
+                    nextIndex = (files.index(self.CurrentFile) + 1) % listSize
+                    self.lb.selection_clear(0, listSize)
+                    self.lb.selection_set(nextIndex)
+                    self.lb.activate(nextIndex)
+                    self.lb.see(nextIndex)
+                    self.loadfile(files[nextIndex])
 
 
     def stopPmidi(self, w=''):
