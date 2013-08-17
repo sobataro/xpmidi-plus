@@ -137,10 +137,6 @@ def makeEntry(parent, label="Label", text='', column=0, row=0):
 class setOptions(object):
 
     def __init__(self):
-
-        if play_pid:
-            return
-
         self.f=f=Toplevel()
         if root.winfo_viewable():
             f.transient(root)
