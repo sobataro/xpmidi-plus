@@ -201,10 +201,6 @@ class setOptions(object):
 class selectFav(object):
 
     def __init__(self):
-
-#        if play_pid:
-#            return
-
         self.f=f=Toplevel()
         if root.winfo_viewable():
             f.transient(root)
@@ -345,6 +341,7 @@ class Application(object):
         self.listbox.focus_force()   # make the listbox use keyboard
 
         self.CurrentFile = None
+        self.next_file_index = None
         self.fileList = {} # dict of files in listbox. Key is displayed name, data=actual
 
         self.updateList()
@@ -357,7 +354,8 @@ class Application(object):
             c = ', '.join(current_dir)
         else:
             c = ' '
-        self.msgbox.config(text="XPmidi+\n%s" % c)
+        if not play_pid:
+            self.msgbox.config(text="XPmidi+\n%s" % c)
 
     lastkey = ''
     lastkeytime = 0
@@ -421,19 +419,24 @@ class Application(object):
         self.playfile(sysex_file, wait)
 
 
-    def loadfile(self, f):
+    def loadfile(self, file_name):
         global play_pid
 
-        if not f:
+        if not file_name:
             return
 
-        print(f)
-        self.CurrentFile = f
-        f=self.fileList[f]
+        print(file_name)
+        self.CurrentFile = file_name
+        file_path = self.fileList[file_name]
         self.stopPmidi()
 
-        self.displayPDF(f)
-        play_pid = self.playfile(f)
+        # set the index of next file
+        list_size = self.listbox.size()
+        file_name_list = self.listbox.get(0, list_size)
+        self.next_file_index = (file_name_list.index(self.CurrentFile) + 1) % list_size
+
+        self.displayPDF(file_path)
+        play_pid = self.playfile(file_path)
 
         root.update()
 
@@ -442,10 +445,6 @@ class Application(object):
         """ Callback for the "after" timer."""
 
         global play_pid, display_pid
-
-        t = time.time() - self.playTimer
-        self.msgbox.config(text="[%02d:%02d]: %s\n%s" %
-            (int(t/60), int(t % 60), self.CurrentFile, current_dir[0]))
 
         if display_pid:
             try:
@@ -457,6 +456,9 @@ class Application(object):
         if play_pid:
             try:
                 s = os.waitpid(play_pid, os.WNOHANG)
+                t = time.time() - self.playTimer
+                self.msgbox.config(text="[%02d:%02d]: %s\n%s" %
+                    (int(t/60), int(t % 60), self.CurrentFile, current_dir[0]))
                 root.after(500, self.checkfor)
             except OSError:  # player is gone, kill display
                 if display_pid:
@@ -467,15 +469,13 @@ class Application(object):
                 self.welcome()
 
                 # play next file
-                if self.CurrentFile in self.fileList:
-                    listSize = self.listbox.size()
-                    files = self.listbox.get(0, listSize)
-                    nextIndex = (files.index(self.CurrentFile) + 1) % listSize
-                    self.listbox.selection_clear(0, listSize)
-                    self.listbox.selection_set(nextIndex)
-                    self.listbox.activate(nextIndex)
-                    self.listbox.see(nextIndex)
-                    self.loadfile(files[nextIndex])
+                if self.next_file_index is not None:
+                    list_size = self.listbox.size()
+                    self.listbox.selection_clear(0, list_size)
+                    self.listbox.selection_set(self.next_file_index)
+                    self.listbox.activate(self.next_file_index)
+                    self.listbox.see(self.next_file_index)
+                    self.loadfile(self.listbox.get(0, list_size)[self.next_file_index])
 
 
     def stopPmidi(self, w=''):
@@ -577,14 +577,11 @@ class Application(object):
 
         global current_dir
 
-        if play_pid:
-            return
+        new_directory = tkinter.filedialog.askdirectory(initialdir=','.join(current_dir))
 
-        d=tkinter.filedialog.askdirectory(initialdir=','.join(current_dir))
-
-        if d:
-            current_dir = [d]
-            app.updateList()
+        if new_directory:
+            current_dir = [new_directory]
+            self.updateList()
 
 
 
@@ -653,7 +650,7 @@ class Application(object):
 
         self.updateList(flist, 0)
 
-    def updateList(self, files=None, sort=1):
+    def updateList(self, files=None, sort=1, next=None):
         """ Update the list box with with midi files in the selected directories.
 
             1. If files is NOT None, it has to be a list of midi file names.
@@ -669,6 +666,8 @@ class Application(object):
             files=[]
             for f in current_dir:
                 files.extend( glob.glob('%s/*.mid' % f))
+
+        self.next_file_index = next
 
         self.fileList = {}  # dict of filenames indexed to display name
         tlist = []          # tmp list for dislay
