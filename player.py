@@ -8,11 +8,13 @@ class Player:
         self.root = root
         self.player_pid = None
         self.viewer_pid = None
+        self.tone_generator_clean = False
 
 
     def play_sysex(self, settings, wait = os.P_WAIT):
         if self.is_playing():
             self.stop()
+        self.tone_generator_clean = True
         self.play("./sysex/" + settings.sysex + ".mid", settings, wait)
 
 
@@ -20,11 +22,15 @@ class Player:
              callback_while_playing = None, callback_when_finished = None):
         if self.is_playing():
             self.stop()
+        if not self.tone_generator_clean:
+            self.play_sysex(settings)
 
         self.play_timer = time.time()
         op = shlex.split(settings.player_options)
         self.player_pid = os.spawnvp(wait, settings.player_program,
             [settings.player_program] + op + [file_path])
+
+        self.tone_generator_clean = False
 
         self.root.after(500, self.check)
 

@@ -39,7 +39,6 @@ class Settings:
 
 
     def __del__(self):
-        print(self.display_dir)
         options = {
             "current_dir": self.current_dir,
             "favorite_dirs": self.favorite_dirs,
