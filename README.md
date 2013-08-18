@@ -1,7 +1,7 @@
 Xpmidi+
 ======
 
-An improved version of Xpmidi, a tkinter frontend for pmidi or aplaymidi.
+An improved version of xpmidi, a tkinter frontend for pmidi or aplaymidi.
 
 
 
@@ -42,32 +42,36 @@ Usage
 Just execute `xpmidiplus.py` script. No instllation is needed.
 
 ### Basic usage of xpmidiplus.py
-
-1. You must set proper MIDI port number in the "Player Options". See the [Options](#options) section.
+1. You must set proper MIDI port number in the "Player Options". See the [Settings](#settings) section.
 
 2. Click "Open Dir" button and select the directory contains .mid files.
 
 3. Double click some .mid file and the file will be played.
 
+### How to use "PDF Display" function
+Put PDF files in the same directory as MIDI files, and specify the PDF viewer in the Settings dialog.
+
+To be written in detailed.
 
 
-<a name="options"> Options
+
+<a name="settings">Settings</a>
 ------
 
-You can set following options in the "Options" screen.
+You can set following options in the "Settings" screen.
 
 ### MIDI Playback Options
 
 * MIDI Player
-    * MIDI player's name. `aplaymidi` or `pmidi` is supported.
+    * MIDI player's name. `aplaymidi` and `pmidi` are supported.
 
 * Player Options
     * MIDI player's option.
     * `-p` option (MIDI port) is specified by default. You can check ports by `pmidi -l` or `aplaymidi -l` commands.
 
-* SysEX
+* System Exclusive
     * System Exclusive to send tone generators before each playback.
-    * `[Specified SysEX].mid` file in the `sysex` directory will be used. Preset: GM, GS and XG.
+    * `[Specified System Exclusive].mid` file in the `sysex` directory will be used. Preset: GM, GS and XG.
     * If you want to use another system exclusive, you can add any files in the `sysex` directory, and specify the name in this field.
 
 ### UI Options
@@ -80,10 +84,6 @@ You can set following options in the "Options" screen.
 * PDF Display / PDF Options
     * PDF viewer's name e.g. `evince` and command line options to the PDF viewer.
 
-* PDF Path
-    * Path for PDF files.
-    * If `[PDF Path]/[Playing midi files' name].pdf` file exists, the file will be passed to the PDF viewer.
-
 
 
 Command Line Options
@@ -94,7 +94,7 @@ Command Line Options
 xpmidi recognizes the following on the command line:
 
  -v   Prints the version number and exits
-
+ 
  DIRNAME - you can pass a single directory name on the command line. This is scanned
            of midi file (actually, any names ending in '.mid'). The filenames are
            displayed in the selector. Only 1 directory name can be used.
@@ -105,12 +105,10 @@ You can't mix FILES and DIRNAME on the command line.
 
 
 
-Settings File (~/.xpmidirc)
+Settings File (~/.xpmidiplus.json)
 ------
 
-Xpmidi+ stores settings in the RC file `~/.xpmidiplusrc`.
-
-When xpmidi+ started, this file is excuted as Python source code.
+Xpmidi+ stores settings in the json file `~/.xpmidiplus.json`.
 
 
 
@@ -119,7 +117,7 @@ Bugs and Issues
 
 * User interface is not good
     * Original xpmidi works well, but I was dissatisfied with the original UI... That was why I developing xpmidi+
-    * Current xpmidi+ is mush the same as original.
+    * Current xpmidi+ is much the same as original.
 
 
 
