@@ -24,30 +24,15 @@ import os, sys, signal, glob, time, getopt, shlex
 from array import array
 from struct import pack
 from player import Player
+from settings import Settings
 
 
 # UGLY GLOBAL VARIABLES...
 
-player = Player()
-
-rc_file = os.path.expanduser("~/.xpmidiplusrc")
 version = 0.2
 
 fullsize = 0          # command line option for fullscreen
 
-## These are stored in the rc_file on exit. Some can
-## be modified via the options menu.
-
-current_dir = ['.']
-favorite_dirs = []
-player_program = "aplaymidi"
-player_options = "-p 20:0"      # Player options
-sysex = "GM"
-background_color = "white"          # listbox colors
-foreground_color = "medium blue"
-displayProgram = ""
-displayOptions = ""
-displayDir = []
 
 #############################################################
 
@@ -93,8 +78,8 @@ def makeListBox(parent, width=50, height=20, selectmode=BROWSE, row=0, column=0)
     ys = Scrollbar(f)
     xs = Scrollbar(f)
     listbox = Listbox(f,
-        bg=background_color,
-        fg=foreground_color,
+        bg=settings.background_color,
+        fg=settings.foreground_color,
         width=width,
         height=height,
         yscrollcommand=ys.set,
@@ -132,7 +117,7 @@ def makeEntry(parent, label="Label", text='', column=0, row=0):
 
 
 ########################################
-# Options dialog
+# Settings dialog
 
 class setOptions(object):
 
@@ -143,15 +128,20 @@ class setOptions(object):
 
         makeMenu(f, buttons=(
             ("Cancel", self.f.destroy), ("Apply", self.apply)))
-        self.playerEnt =  makeEntry(f, label="MIDI Player",      text=player_program,   row=1)
-        self.playOptEnt = makeEntry(f, label="Player Options",   text=player_options, row=2)
-        self.sysexEnt =   makeEntry(f, label="SysEX",            text=sysex,    row=3)
-        self.fgEnt =      makeEntry(f, label="Foreground Color", text=foreground_color,   row=4)
-        self.bgEnt =      makeEntry(f, label="Background Color", text=background_color,   row=5)
-
-        self.displayPrg = makeEntry(f, label="PDF Display", text=displayProgram, row=6)
-        self.displayOpt = makeEntry(f, label="PDF Options", text=displayOptions, row=7)
-        self.displayPath = makeEntry(f, label="PDF Path", text=', '.join(displayDir), row=9)
+        self.playerEnt = makeEntry(f, label = "MIDI Player",
+            text = settings.player_program,row=1)
+        self.playOptEnt = makeEntry(f, label="Player Options",
+            text = settings.player_options, row=2)
+        self.sysexEnt = makeEntry(f, label="SysEX",
+            text = settings.sysex, row=3)
+        self.fgEnt = makeEntry(f, label="Foreground Color",
+            text = settings.foreground_color, row=4)
+        self.bgEnt =  makeEntry(f, label="Background Color",
+            text = settings.background_color, row=5)
+        self.displayPrg = makeEntry(f, label="PDF Viewer",
+            text = settings.viewer_program, row=6)
+        self.displayOpt = makeEntry(f, label="PDF Viewer Options",
+            text = settings.viewer_options, row=7)
 
         f.grid_rowconfigure(1, weight=1)
         f.grid_columnconfigure(0, weight=1)
@@ -161,29 +151,25 @@ class setOptions(object):
 
 
     def apply(self):
-        global player_program, player_options, sysex
-        global foreground_color, background_color
-        global displayProgram, displayOptions, displayDir
+        settings.player_program = self.playerEnt.get()
+        settings.player_options = self.playOptEnt.get()
+        settings.sysex = self.sysexEnt.get()
 
-        player_program = self.playerEnt.get()
-        player_options = self.playOptEnt.get()
-        sysex = self.sysexEnt.get()
-
-        displayProgram = self.displayPrg.get()
-        displayOptions = self.displayOpt.get()
+        settings.viewer_program = self.displayPrg.get()
+        settings.viewer_options = self.displayOpt.get()
         fg = self.fgEnt.get()
         bg = self.bgEnt.get()
 
         try:
-            app.listbox.config(fg=fg)
-            foreground_color = fg
+            app.listbox.config(fg = fg)
+            settings.foreground_color = fg
         except TclError:
             tkinter.messagebox.showerror("Set Forground Color",
                 "Illegal foreground color value")
 
         try:
-            app.listbox.config(bg=bg)
-            background_color = bg
+            app.listbox.config(bg = bg)
+            settings.background_color = bg
         except TclError:
             tkinter.messagebox.showerror("Set Background Color",
                 "Illegal background color value")
@@ -238,30 +224,24 @@ class selectFav(object):
 
     def doSelect(self, n):
         """ Update the filelist. Called from select button or doubleclick."""
-
-        global current_dir
-
         if n:
-            current_dir = n
+            settings.current_dir = n
             app.updateList()
         self.f.destroy()
 
 
     def addToFav(self):
         """ Add the current directory (what's displayed) to favorites."""
+        for n in settings.current_dir:
+            if n and not settings.favorite_dirs.count(n):
+                settings.favorite_dirs.append(n)
 
-        for n in current_dir:
-            if n and not favorite_dirs.count(n):
-                favorite_dirs.append(n)
-
-        favorite_dirs.sort()
+        settings.favorite_dirs.sort()
         self.updateBox()
+
 
     def delete(self):
         """ Delete highlighted items, Called from 'delete' button. """
-
-        global favorite_dirs
-
         l=[]
         for n in self.listbox.curselection():
             l.append(self.listbox.get(int(n)))
@@ -273,16 +253,14 @@ class selectFav(object):
                       parent=self.f):
 
                 for n in l:
-                    favorite_dirs.remove(n)
+                    settings.favorite_dirs.remove(n)
 
                 self.updateBox()
 
 
     def updateBox(self):
-        global favorite_dirs
-
         self.listbox.delete(0, END)
-        for n in favorite_dirs:
+        for n in settings.favorite_dirs:
             self.listbox.insert(END, n)
 
 
@@ -303,7 +281,7 @@ class Application(object):
              ("Open Dir", self.chd),
              ("Load Playlist", self.playList),
              ("Favorites", selectFav),
-             ("Options", setOptions)))
+             ("Settings", setOptions)))
 
         self.msgbox = makeLabelBox(root, justify=LEFT, row=2, column=0)
 
@@ -342,13 +320,13 @@ class Application(object):
 
         self.updateList()
         self.welcome()
-        player.play_sysex(sysex, player_program, player_options, os.P_NOWAIT)
+        player.play_sysex(settings, os.P_NOWAIT)
 
 
     def welcome(self):
         # Display message in status box
-        if current_dir:
-            c = ', '.join(current_dir)
+        if settings.current_dir:
+            c = ', '.join(settings.current_dir)
         else:
             c = ' '
         if not player.is_playing():
@@ -420,9 +398,9 @@ class Application(object):
         file_name_list = self.listbox.get(0, list_size)
         self.next_file_index = (file_name_list.index(self.CurrentFile) + 1) % list_size
 
-        player.view(file_path, displayDir, displayProgram, displayOptions)
-        player.play(file_path, player_program, player_options,
-                    os.P_NOWAIT, root, self.update_statusbar, self.play_next)
+        player.view(file_path, settings)
+        player.play(file_path, settings, os.P_NOWAIT,
+            self.update_statusbar, self.play_next)
 
         root.update()
 
@@ -435,14 +413,15 @@ class Application(object):
         self.msgbox.config(text="Stopping...%s\n" % self.CurrentFile)
         root.update_idletasks()
 
-        player.play_sysex(sysex, player_program, player_options, os.P_WAIT)
+        player.play_sysex(settings, os.P_WAIT)
         self.welcome()
         time.sleep(.5)
 
 
     def update_statusbar(self, time):
         self.msgbox.config(text="[%02d:%02d]: %s\n%s" %
-            (int(time / 60), int(time % 60), self.CurrentFile, current_dir[0]))
+            (int(time / 60), int(time % 60),
+            self.CurrentFile, settings.current_dir[0]))
 
 
     def play_next(self):
@@ -461,21 +440,20 @@ class Application(object):
 
     def rotateDisplayList(self, w):
         """ Callback for <F2>. Rotate display PDF list"""
-
-        global displayDir
-        if not len(displayDir):
+        if not len(settings.display_dir):
             return
 
-        displayDir.append(displayDir.pop(0))
+        settings.display_dir.append(settings.display_dir.pop(0))
         opts={'aspect':4}
-        tkinter.messagebox.showinfo(message="DisplayPDF dir: %s" % displayDir[0])
+        tkinter.messagebox.showinfo(message="DisplayPDF dir: %s" % settings.display_dir[0])
 
     def displayOnly(self, w):
         """ Callback for <F1>. """
 
         player.stop()
-        player.view(self.fileList[self.listbox.get(ACTIVE)], displayDir,
-                    displayProgram, displayOptions)
+        player.view(self.fileList[self.listbox.get(ACTIVE)],
+            settings.display_dir, settings.viewer_program,
+            settings.display_options)
 
 
     def chd(self):
@@ -483,58 +461,22 @@ class Application(object):
             Switch to new directory and updates list.
         """
 
-        global current_dir
-
-        new_directory = tkinter.filedialog.askdirectory(initialdir=','.join(current_dir))
+        new_directory = tkinter.filedialog.askdirectory(
+            initialdir=','.join(settings.current_dir))
 
         if new_directory:
-            current_dir = [new_directory]
+            settings.current_dir = [new_directory]
             self.updateList()
 
 
-
     def quitall(self, ex=''):
-        """ All done. Save current dir, stop playing and exit. """
+        """ All done. Stop playing and exit. """
 
         self.stopPmidi()
-
-        def writeoption(s):
-            print("%s = %s" % (s, eval(s)))
-
-        # The options by name and a 'type': 'list', 'string', 'integer'
-        options = [
-            ['favorite_dirs', 'l'],
-            ['current_dir', 'l'],
-            ['background_color', 's'],
-            ['foreground_color', 's'],
-            ['player_options', 's'],
-            ['player_program', 's'],
-            ['sysex', 's'],
-            ['displayProgram', 's'],
-            ['displayOptions', 's'],
-            ['displayDir', 'l']  ]
-
-        f=open(rc_file, 'w')
-
-        f.write("### XPMIDI RC FILE. Autogenerated %s, do not modify.\n\n"
-            % time.asctime())
-
-        for o, t in options:
-            if t == 'l' or t == 'i':     # lists are just converted
-                pv = """%s""" % eval(o)
-            elif t == 's':               # strings need additional love
-                vv=eval(o)
-                vv=vv.replace("'", "\\'")
-                vv=vv.replace('"', '\\"')
-                pv = """'%s'""" % vv
-            f.write("%s = %s\n" % (o, pv))
-
-        f.close()
         sys.exit()
 
 
     def playList(self):
-
         inpath = tkinter.filedialog.askopenfile(
             filetypes=[("Playlists","*.xpmidilst")], initialdir="~")
 
@@ -558,6 +500,7 @@ class Application(object):
 
         self.updateList(flist, 0)
 
+
     def updateList(self, files=None, sort=1, next=None):
         """ Update the list box with with midi files in the selected directories.
 
@@ -572,8 +515,8 @@ class Application(object):
 
         if not files:
             files=[]
-            for f in current_dir:
-                files.extend( glob.glob('%s/*.mid' % f))
+            for f in settings.current_dir:
+                files.extend(glob.glob('%s/*.mid' % f))
 
         self.next_file_index = next
 
@@ -604,7 +547,7 @@ class Application(object):
 ####################################################
 
 
-# Parse options.
+# Parse settings.
 
 try:
     opts, args = getopt.gnu_getopt(sys.argv[1:],  "vf", [])
@@ -643,16 +586,9 @@ if dcount > 1:
     print("Only 1 directory can be specified on the command line.")
     sys.exit(1)
 
-# Read the RC file if it exists.
+# Read the settings file if it exists.
 
-if os.path.exists(rc_file):
-    try:
-        exec(compile(open(rc_file).read(), rc_file, 'exec'))
-    except IOError:
-        print("Error reading %s:  %s" % (rc_file, sys.exc_info()[0]))
-
-if not current_dir:
-    current_dir = ['.']
+settings = Settings()
 
 # If a dir was specified make it current
 
@@ -666,6 +602,9 @@ root = Tk()
 root.title("Xpmidi+ - pmidi frontend")
 if fullsize:
     root.geometry("%dx%s" % root.maxsize())
+
+player = Player(root)
+
 app=Application()
 
 if fcount:

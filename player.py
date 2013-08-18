@@ -4,45 +4,43 @@ import shlex
 import signal
 
 class Player:
-    def __init__(self):
+    def __init__(self, root):
+        self.root = root
         self.player_pid = None
         self.viewer_pid = None
 
 
-    def play_sysex(self, sysex_file, player, player_options, wait = os.P_WAIT):
+    def play_sysex(self, settings, wait = os.P_WAIT):
         if self.is_playing():
             self.stop()
-        self.play("./sysex/" + sysex_file + ".mid", player, player_options, wait)
+        self.play("./sysex/" + settings.sysex + ".mid", settings, wait)
 
 
-    def play(self, file_path, player, player_options, wait, root = None,
+    def play(self, file_path, settings, wait,
              callback_while_playing = None, callback_when_finished = None):
         if self.is_playing():
             self.stop()
 
         self.play_timer = time.time()
-        op = shlex.split(player_options)
-        self.player_pid = os.spawnvp(wait, player, [player] + op + [file_path])
+        op = shlex.split(settings.player_options)
+        self.player_pid = os.spawnvp(wait, settings.player_program,
+            [settings.player_program] + op + [file_path])
 
-        self.root = root
-        if root:
-            root.after(500, self.check)
+        self.root.after(500, self.check)
 
         self.while_playing = callback_while_playing
         self.when_finished = callback_when_finished
 
 
-    def view(self, midifile_name, display_dir, viewer, viewer_options):
-        if not viewer:
+    def view(self, midifile_path, settings):
+        if not settings.viewer_program:
             return
 
-        pdffile_name = os.path.basename(midifile_name).replace(".mid", ".pdf")
-        if len(display_dir):
-            pdffile_path = os.path.join(os.path.expanduser(display_dir[0]),
-                                        pdffile_name)
-            if os.path.exists(pdffile_path):
-                self.display_pid = os.spawnvp(os.P_NOWAIT, viewer,
-                    [viewer] + viewer_options.split() + [pdffile_path]  )
+        pdffile_path = os.path.expanduser(
+            midifile_path.replace(".mid", ".pdf"))
+        if os.path.exists(pdffile_path):
+            self.viewer_pid = os.spawnvp(os.P_NOWAIT, settings.viewer_program,
+                [settings.viewer_program] + settings.viewer_options.split() + [pdffile_path])
         else:
             self.viewer_pid = None
 
