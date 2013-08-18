@@ -23,12 +23,12 @@ import tkinter.messagebox
 import os, sys, signal, glob, time, getopt, shlex
 from array import array
 from struct import pack
+from player import Player
 
 
 # UGLY GLOBAL VARIABLES...
 
-play_pid = None        # PID of currently playing midi
-display_pid = None     # PID for the display program
+player = Player()
 
 rc_file = os.path.expanduser("~/.xpmidiplusrc")
 version = 0.2
@@ -40,7 +40,7 @@ fullsize = 0          # command line option for fullscreen
 
 current_dir = ['.']
 favorite_dirs = []
-player = "aplaymidi"
+player_program = "aplaymidi"
 player_options = "-p 20:0"      # Player options
 sysex = "GM"
 background_color = "white"          # listbox colors
@@ -143,7 +143,7 @@ class setOptions(object):
 
         makeMenu(f, buttons=(
             ("Cancel", self.f.destroy), ("Apply", self.apply)))
-        self.playerEnt =  makeEntry(f, label="MIDI Player",      text=player,   row=1)
+        self.playerEnt =  makeEntry(f, label="MIDI Player",      text=player_program,   row=1)
         self.playOptEnt = makeEntry(f, label="Player Options",   text=player_options, row=2)
         self.sysexEnt =   makeEntry(f, label="SysEX",            text=sysex,    row=3)
         self.fgEnt =      makeEntry(f, label="Foreground Color", text=foreground_color,   row=4)
@@ -161,11 +161,11 @@ class setOptions(object):
 
 
     def apply(self):
-        global player, player_options, sysex
+        global player_program, player_options, sysex
         global foreground_color, background_color
         global displayProgram, displayOptions, displayDir
 
-        player = self.playerEnt.get()
+        player_program = self.playerEnt.get()
         player_options = self.playOptEnt.get()
         sysex = self.sysexEnt.get()
 
@@ -342,7 +342,8 @@ class Application(object):
 
         self.updateList()
         self.welcome()
-        self.playSysex(os.P_NOWAIT)
+        player.play_sysex(sysex, player_program, player_options, os.P_NOWAIT)
+
 
     def welcome(self):
         # Display message in status box
@@ -350,7 +351,7 @@ class Application(object):
             c = ', '.join(current_dir)
         else:
             c = ' '
-        if not play_pid:
+        if not player.is_playing():
             self.msgbox.config(text="XPmidi+\n%s" % c)
 
     lastkey = ''
@@ -404,127 +405,57 @@ class Application(object):
         self.listbox.activate(self.listbox.nearest(w.y))
         self.loadfile(self.listbox.get(self.listbox.nearest(w.y)))
 
-    def playSysex(self, wait=os.P_WAIT):
-        # Find sysex directory
-        file = __file__
-        if os.path.islink(file):
-            file = os.readlink(file)
-        sysex_file = os.path.abspath(os.path.dirname(file)) +\
-            "/sysex/" + sysex + ".mid"
-
-        self.playfile(sysex_file, wait)
-
 
     def loadfile(self, file_name):
-        global play_pid
-
         if not file_name:
             return
 
         print(file_name)
         self.CurrentFile = file_name
         file_path = self.fileList[file_name]
-        self.stopPmidi()
+        player.stop()
 
         # set the index of next file
         list_size = self.listbox.size()
         file_name_list = self.listbox.get(0, list_size)
         self.next_file_index = (file_name_list.index(self.CurrentFile) + 1) % list_size
 
-        self.displayPDF(file_path)
-        play_pid = self.playfile(file_path)
+        player.view(file_path, displayDir, displayProgram, displayOptions)
+        player.play(file_path, player_program, player_options,
+                    os.P_NOWAIT, root, self.update_statusbar, self.play_next)
 
         root.update()
 
 
-    def checkfor(self):
-        """ Callback for the "after" timer."""
-
-        global play_pid, display_pid
-
-        if display_pid:
-            try:
-                os.waitpid(display_pid, os.WNOHANG)
-            except OSError:   # our display is gone, kill the player
-                display_pid = None
-                self.stopPmidi()
-
-        if play_pid:
-            try:
-                s = os.waitpid(play_pid, os.WNOHANG)
-                t = time.time() - self.playTimer
-                self.msgbox.config(text="[%02d:%02d]: %s\n%s" %
-                    (int(t/60), int(t % 60), self.CurrentFile, current_dir[0]))
-                root.after(500, self.checkfor)
-            except OSError:  # player is gone, kill display
-                if display_pid:
-                    os.kill(display_pid, signal.SIGKILL)
-                display_pid = None
-                play_pid = None
-                self.playTimer = 0
-                self.welcome()
-
-                # play next file
-                if self.next_file_index is not None:
-                    list_size = self.listbox.size()
-                    self.listbox.selection_clear(0, list_size)
-                    self.listbox.selection_set(self.next_file_index)
-                    self.listbox.activate(self.next_file_index)
-                    self.listbox.see(self.next_file_index)
-                    self.loadfile(self.listbox.get(0, list_size)[self.next_file_index])
-
-
-    def stopPmidi(self, w=''):
+    def stopPmidi(self):
         """ Stop currently playing MIDI. """
 
-        global play_pid, display_pid
-
-        if not play_pid and not display_pid:    # nothing playing, just return
-            return
-
-        if display_pid:
-            os.kill(display_pid, signal.SIGKILL)
-            display_pid = None
-
-        current_pid = play_pid
-        play_pid = None
+        player.stop()
 
         self.msgbox.config(text="Stopping...%s\n" % self.CurrentFile)
         root.update_idletasks()
 
-        """ See if last run is still running. The call to os.waitpid()
-            returns a process ID and a status indication. We check the PID
-            returned. If this value is equal to the current PID then
-            the process has died ... and we can ignore the whole issue.
-        """
-
-        if current_pid:
-
-            try:
-                pid,s = os.waitpid(current_pid, os.WNOHANG)
-            except OSError:
-                return
-
-            if pid:
-                return
-
-            # stop current player, could leave hanging notes
-            x=os.kill(current_pid, signal.SIGKILL)
-
-        self.playSysex()
+        player.play_sysex(sysex, player_program, player_options, os.P_WAIT)
         self.welcome()
         time.sleep(.5)
 
 
-    def playfile(self, f, wait=os.P_NOWAIT):
-        """ Call the midi player. Used by loadfile() and stoppmidi(). """
+    def update_statusbar(self, time):
+        self.msgbox.config(text="[%02d:%02d]: %s\n%s" %
+            (int(time / 60), int(time % 60), self.CurrentFile, current_dir[0]))
 
-        root.after(500, self.checkfor)
-        self.playTimer = time.time()
 
-        op = shlex.split(player_options)
+    def play_next(self):
+        self.welcome()
+        if self.next_file_index is not None:
+            list_size = self.listbox.size()
+            self.listbox.selection_clear(0, list_size)
+            self.listbox.selection_set(self.next_file_index)
+            self.listbox.activate(self.next_file_index)
+            self.listbox.see(self.next_file_index)
+            self.loadfile(self.listbox.get(0, list_size)[self.next_file_index])
 
-        return os.spawnvp(wait, player, [player] + op + [f])
+
 
     # PDF display
 
@@ -542,28 +473,9 @@ class Application(object):
     def displayOnly(self, w):
         """ Callback for <F1>. """
 
-        self.stopPmidi()
-        self.displayPDF(self.fileList[self.listbox.get(ACTIVE)] )
-
-    def displayPDF(self, midifile):
-        """ Find and display a PDF for the currently playing file. """
-
-        global display_pid
-
-        if not displayProgram:
-            return
-
-        if display_pid:
-            os.kill(display_pid, signal.SIGKILL)
-
-        f = os.path.basename(midifile).replace(".mid", ".pdf")
-        if len(displayDir):
-            t = os.path.join(os.path.expanduser(displayDir[0]), f)
-            if os.path.exists(t):
-                display_pid = os.spawnvp(os.P_NOWAIT, displayProgram,
-                    [displayProgram] + displayOptions.split() + [t]  )
-        else:
-            display_pid = None
+        player.stop()
+        player.view(self.fileList[self.listbox.get(ACTIVE)], displayDir,
+                    displayProgram, displayOptions)
 
 
     def chd(self):
@@ -596,7 +508,7 @@ class Application(object):
             ['background_color', 's'],
             ['foreground_color', 's'],
             ['player_options', 's'],
-            ['player', 's'],
+            ['player_program', 's'],
             ['sysex', 's'],
             ['displayProgram', 's'],
             ['displayOptions', 's'],
