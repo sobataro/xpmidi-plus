@@ -28,25 +28,17 @@ import time
 from player import Player
 from settings import Settings
 
-
-# UGLY GLOBAL VARIABLES...
-
-version = 0.2
-
-fullsize = 0          # command line option for fullscreen
-
-
-#############################################################
+version = 0.3
 
 def usage():
     """ Display usage message and exit. """
 
     print("Xpmidi+, GUI frontend for MIDI Player")
-    print("(c) 2012, tuxjunky")
-    print("Usage: xpmidiplus.py [opts] [dir | Midifiles]")
-    print("Options:")
-    print("   -f    start full size")
-    print("   -v    display version number")
+    print("(c) 2013, tuxjunky")
+    print("usage: xpmidiplus.py [options] [dir | midifile(s)]")
+    print("options:")
+    print("\t-f: start full size")
+    print("\t-v: display version number")
     sys.exit(0)
 
 
@@ -62,6 +54,7 @@ def makeMenu(parent, buttons=(())):
 
     return m
 
+
 def makeLabelBox(parent, justify=CENTER, row=0, column=0, text=''):
     """ Create a label box. """
 
@@ -72,6 +65,7 @@ def makeLabelBox(parent, justify=CENTER, row=0, column=0, text=''):
     f.grid_rowconfigure(0, weight=1)
 
     return b
+
 
 def makeListBox(parent, width=50, height=20, selectmode=BROWSE, row=0, column=0):
     """ Create a list box with x and y scrollbars. """
@@ -102,17 +96,20 @@ def makeListBox(parent, width=50, height=20, selectmode=BROWSE, row=0, column=0)
     f.grid_columnconfigure(1, weight=1)
     return listbox
 
+
 def makeEntry(parent, label="Label", text='', column=0, row=0):
 
-    f=Frame(parent)
-    l=Label(f, anchor=E, width=15, padx=20, pady=10, text=label).grid(column=0, row=0)
-    e=Entry(f, text=text, width=30)
+    f = Frame(parent)
+    l = Label(f, anchor=E, width=15, padx=20, pady=10,
+        text=label).grid(column=0, row=0)
+    e = Entry(f, text=text, width=30)
     e.grid(column=1, row=0, sticky=E)
     e.delete(0, END)
     e.insert(END, text)
-    f.grid( column=column, row=row)
+    f.grid(column=column, row=row)
 
     return e
+
 
 #########################################
 # We have 3 class, 1 for each window we create.
@@ -122,9 +119,8 @@ def makeEntry(parent, label="Label", text='', column=0, row=0):
 # Settings dialog
 
 class setOptions(object):
-
     def __init__(self):
-        self.f=f=Toplevel()
+        self.f = f = Toplevel()
         if root.winfo_viewable():
             f.transient(root)
 
@@ -183,9 +179,8 @@ class setOptions(object):
 # A listbox with the favorites directory
 
 class selectFav(object):
-
     def __init__(self):
-        self.f=f=Toplevel()
+        self.f = f = Toplevel()
         if root.winfo_viewable():
             f.transient(root)
 
@@ -194,7 +189,8 @@ class selectFav(object):
             ("Add Current", self.addToFav),
             ("Delete", self.delete)))
 
-        self.listbox = makeListBox(f, height=10, selectmode=MULTIPLE, row=2, column=0)
+        self.listbox = makeListBox(f, height=10, selectmode=MULTIPLE,
+            row=2, column=0)
         self.listbox.bind("<Double-Button-1>", self.dclick)
 
         # Make the listbox frame expandable
@@ -211,14 +207,12 @@ class selectFav(object):
 
     def dclick(self, w):
         """ Callback for doubleclick. Just do one dir. """
-
-        self.doSelect( [self.listbox.get(self.listbox.nearest(w.y))] )
+        self.doSelect([self.listbox.get(self.listbox.nearest(w.y))])
 
 
     def select(self):
         """ Callback for the 'select' button. """
-
-        l=[]
+        l = []
         for n in self.listbox.curselection():
             l.append(self.listbox.get(int(n)))
         self.doSelect(l)
@@ -250,9 +244,9 @@ class selectFav(object):
 
         if l:
             if tkinter.messagebox.askyesno("Delete Directory",
-                     "Are you sure you want to delete the "
-                     "highlighted directories from the favorites list?",
-                      parent=self.f):
+                "Are you sure you want to delete the "
+                "highlighted directories from the favorites list?",
+                parent=self.f):
 
                 for n in l:
                     settings.favorite_dirs.remove(n)
@@ -273,10 +267,11 @@ class Application(object):
 
     def __init__(self):
         """ Create 3 frames:
-               bf - the menu bar
-               lf - the list box with a scroll bar
-               mf - a label at the bottom with the current filename.
+               self.menu:    the menu bar
+               self.listbox: the list box with a scroll bar
+               self.msgbox:  a label at the bottom with the current filename.
         """
+        self.player = Player(root)
 
         self.menu = makeMenu(root, buttons=(
              ("Stop", self.stopPmidi),
@@ -310,7 +305,6 @@ class Application(object):
             root.bind(a, self.keyPress)
 
         self.listbox.bind('<F1>', self.displayOnly)
-        self.listbox.bind('<F2>', self.rotateDisplayList)
 
         # end bindings
 
@@ -322,7 +316,7 @@ class Application(object):
 
         self.updateList()
         self.welcome()
-        player.play_sysex(settings, os.P_NOWAIT)
+        self.player.play_sysex(settings, os.P_NOWAIT)
 
 
     def welcome(self):
@@ -331,7 +325,7 @@ class Application(object):
             c = ', '.join(settings.current_dir)
         else:
             c = ' '
-        if not player.is_playing():
+        if not self.player.is_playing():
             self.msgbox.config(text="XPmidi+\n%s" % c)
 
     lastkey = ''
@@ -393,15 +387,15 @@ class Application(object):
         print(file_name)
         self.CurrentFile = file_name
         file_path = self.fileList[file_name]
-        player.stop()
+        self.player.stop()
 
         # set the index of next file
         list_size = self.listbox.size()
         file_name_list = self.listbox.get(0, list_size)
         self.next_file_index = (file_name_list.index(self.CurrentFile) + 1) % list_size
 
-        player.view(file_path, settings)
-        player.play(file_path, settings, os.P_NOWAIT,
+        self.player.view(file_path, settings)
+        self.player.play(file_path, settings, os.P_NOWAIT,
             self.update_statusbar, self.play_next)
 
         root.update()
@@ -409,24 +403,25 @@ class Application(object):
 
     def stopPmidi(self):
         """ Stop currently playing MIDI. """
-
-        player.stop()
+        self.player.stop()
 
         self.msgbox.config(text="Stopping...%s\n" % self.CurrentFile)
         root.update_idletasks()
 
-        player.play_sysex(settings, os.P_WAIT)
+        self.player.play_sysex(settings, os.P_WAIT)
         self.welcome()
         time.sleep(.5)
 
 
     def update_statusbar(self, time):
+        # Callback for Player class
         self.msgbox.config(text="[%02d:%02d]: %s\n%s" %
             (int(time / 60), int(time % 60),
             self.CurrentFile, settings.current_dir[0]))
 
 
     def play_next(self):
+        # Callback for Player class
         self.welcome()
         if self.next_file_index is not None:
             list_size = self.listbox.size()
@@ -437,23 +432,11 @@ class Application(object):
             self.loadfile(self.listbox.get(0, list_size)[self.next_file_index])
 
 
-
-    # PDF display
-
-    def rotateDisplayList(self, w):
-        """ Callback for <F2>. Rotate display PDF list"""
-        if not len(settings.display_dir):
-            return
-
-        settings.display_dir.append(settings.display_dir.pop(0))
-        opts={'aspect':4}
-        tkinter.messagebox.showinfo(message="DisplayPDF dir: %s" % settings.display_dir[0])
-
     def displayOnly(self, w):
         """ Callback for <F1>. """
 
-        player.stop()
-        player.view(self.fileList[self.listbox.get(ACTIVE)],
+        self.player.stop()
+        self.player.view(self.fileList[self.listbox.get(ACTIVE)],
             settings.display_dir, settings.viewer_program,
             settings.display_options)
 
@@ -485,13 +468,13 @@ class Application(object):
         if not inpath:
             return
 
-        flist=[]
-        dir=''
+        flist = []
+        dir = ''
         while 1:
-            l=inpath.readline()
+            l = inpath.readline()
             if not l:
                 break
-            l=l.strip()
+            l = l.strip()
             if l.startswith("#"):
                 continue
 
@@ -504,11 +487,12 @@ class Application(object):
 
 
     def updateList(self, files=None, sort=1, next=None):
-        """ Update the list box with with midi files in the selected directories.
+        """ Update the listbox with with midi files in the selected directories.
 
             1. If files is NOT None, it has to be a list of midi file names.
                If there are files, skip (2).
-            2. Create a list of all the files with a .mid extension in all the dirs,
+            2. Create a list of all the files with a .mid extension in all
+               the dirs,
             3. Strip out the actual filename (less the mid ext) from each entry
                and create a dic entry with the filename as the key and the
                complete path as the data.
@@ -516,7 +500,7 @@ class Application(object):
         """
 
         if not files:
-            files=[]
+            files = []
             for f in settings.current_dir:
                 files.extend(glob.glob('%s/*.mid' % f))
 
@@ -526,9 +510,9 @@ class Application(object):
         tlist = []          # tmp list for dislay
 
         for f in files:
-            a=f.split('/')[-1]  # get stuff after last '/'
-            a=a.split('.')[-2]  # drop final (.mid) extension
-            self.fileList[a]=f
+            a = f.split('/')[-1]  # get stuff after last '/'
+            a = a.split('.')[-2]  # drop final (.mid) extension
+            self.fileList[a] = f
             tlist.append(a)
 
         self.listbox.delete(0, END)
@@ -548,68 +532,64 @@ class Application(object):
 # Initial setup
 ####################################################
 
+if __name__ == "__main__":
+    # Parse settings.
 
-# Parse settings.
-
-try:
-    opts, args = getopt.gnu_getopt(sys.argv[1:],  "vf", [])
-except getopt.GetoptError:
-    usage()
-
-for o,a in opts:
-    if o == '-v':
-        print(version)
-        sys.exit(0)
-    elif o == '-f':
-        fullsize=1
-    else:
+    try:
+        opts, args = getopt.gnu_getopt(sys.argv[1:],  "vf", [])
+    except getopt.GetoptError:
         usage()
 
-# Parse remaining cmd line params. This can be 1 directory name or
-# a number of midi files.
+    fullsize = 0          # command line option for fullscreen
 
-fcount = 0
-dcount = 0
+    for o, a in opts:
+        if o == '-v':
+            print(version)
+            sys.exit(0)
+        elif o == '-f':
+            fullsize = 1
+        else:
+            usage()
 
-for f in args:
-    if os.path.isdir(f):
-        dcount+=1
-    elif os.path.isfile(f):
-        fcount+=1
-    else:
-        print("%s is an Unknown filetype" % f)
+    # Parse remaining cmd line params. This can be 1 directory name or
+    # a number of midi files.
+
+    fcount = 0
+    dcount = 0
+
+    for f in args:
+        if os.path.isdir(f):
+            dcount += 1
+        elif os.path.isfile(f):
+            fcount += 1
+        else:
+            print("%s is an Unknown filetype" % f)
+            sys.exit(1)
+
+    if dcount and fcount:
+        print("You can't mix filenames and directory names on the command line.")
         sys.exit(1)
 
-if dcount and fcount:
-    print("You can't mix filenames and directory names on the command line.")
-    sys.exit(1)
+    if dcount > 1:
+        print("Only 1 directory can be specified on the command line.")
+        sys.exit(1)
 
-if dcount > 1:
-    print("Only 1 directory can be specified on the command line.")
-    sys.exit(1)
+    # Read the settings file if it exists.
+    settings = Settings()
 
-# Read the settings file if it exists.
+    # If a dir was specified make it current
+    if dcount:
+        current_dir = [os.path.abspath(os.path.expanduser(args[0]))]
 
-settings = Settings()
+    # Start the tk stuff. If you want to change the font size, do it here!!!
+    root = Tk()
+    root.title("Xpmidi+ - pmidi frontend")
+    if fullsize:
+        root.geometry("%dx%s" % root.maxsize())
 
-# If a dir was specified make it current
+    app = Application()
 
-if dcount:
-    current_dir = [os.path.abspath(os.path.expanduser(args[0]))]
+    if fcount:
+        app.updateList(args)
 
-
-# Start the tk stuff. If you want to change the font size, do it here!!!
-
-root = Tk()
-root.title("Xpmidi+ - pmidi frontend")
-if fullsize:
-    root.geometry("%dx%s" % root.maxsize())
-
-player = Player(root)
-
-app=Application()
-
-if fcount:
-    app.updateList(args)
-
-root.mainloop()
+    root.mainloop()
