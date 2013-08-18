@@ -20,9 +20,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 from tkinter import *
 import tkinter.filedialog
 import tkinter.messagebox
-import os, sys, signal, glob, time, getopt, shlex
-from array import array
-from struct import pack
+import os
+import sys
+import getopt
+import glob
+import time
 from player import Player
 from settings import Settings
 
